@@ -3,4 +3,5 @@ pub enum ViewState {
     #[default]
     DailyPage,
     TagPage,
+    Exit,
 }
