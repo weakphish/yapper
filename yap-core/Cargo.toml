@@ -1,0 +1,16 @@
+[package]
+name = "yap-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ropey = "1.6.1"
+tree-ds = "0.1.6"
+
+[dependencies.uuid]
+version = "1.16.0"
+# Lets you generate random UUIDs
+features = [
+    "v4",
+    "v7"
+]
