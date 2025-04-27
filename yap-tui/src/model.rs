@@ -1,30 +1,19 @@
+use crate::state::ViewState;
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
-use ratatui::prelude::{Line, Stylize, Widget};
-use ratatui::symbols::border;
-use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
 use std::io;
-use uuid::Uuid;
+use tui_tree_widget::Tree;
 
 #[derive(Debug, Default)]
 pub struct Model {
     view_state: ViewState,
-    blocks: Vec<Uuid>, // uuids of blocks in pre-order traversal
+    block_tree: Page,
     exit: bool,
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-enum ViewState {
-    #[default]
-    DailyPage,
-    TagPage,
-}
-
 impl Model {
-    /// runs the application's main loop until the user quits
+    /// Runs the application's main loop until the user quits
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -33,8 +22,11 @@ impl Model {
         Ok(())
     }
 
+    /// Draws the view for the current application state to the terminal
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+        // TODO: match current state and draw the appropriate view
+        let area = frame.area();
+        let tree = Tree::new();
     }
 
     /// Updates the application's state based on user input
@@ -59,19 +51,5 @@ impl Model {
 
     fn exit(&mut self) {
         self.exit = true;
-    }
-}
-
-impl Widget for &Model {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from("Yapper".bold());
-        let block = Block::bordered()
-            .title(title.centered())
-            .border_set(border::THICK);
-
-        Paragraph::new("Hello, world!")
-            .centered()
-            .block(block)
-            .render(area, buf);
     }
 }

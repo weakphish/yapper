@@ -14,4 +14,12 @@ impl Block {
             content,
         }
     }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn content(&self) -> &Rope {
+        &self.content
+    }
 }

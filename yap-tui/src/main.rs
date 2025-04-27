@@ -4,6 +4,8 @@ use model::Model;
 use ratatui::{style::Stylize, widgets::Widget};
 
 mod model;
+mod page;
+mod state;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
