@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 crossterm = "0.29.0"
 ratatui = { version = "0.29.0", features = ["all-widgets"] }
+uuid = { version = "1.16.0", features = ["v4"] }

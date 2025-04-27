@@ -8,7 +8,7 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(content: Rope) -> Self {
+    pub fn new(content: Rope, node_id: Uuid) -> Self {
         Block {
             id: Uuid::now_v7(),
             content,
