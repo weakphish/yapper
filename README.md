@@ -11,7 +11,6 @@
 ### Core
 - [ ] Core data structures
 - [ ] Parse and store data
-- [ ] 
 
 ### TUI
 - [ ] TODO
@@ -19,3 +18,5 @@
 ### Future Wishlist
 - [ ] Plugins
   - Lua? PyO3?
+- [ ] Vim bindings
+  - [ ] Embed Neovim?

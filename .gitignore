@@ -1,3 +1,6 @@
-.idea
-/yapper/target/*
+# Targts
+/target/*
 /yap-core/target/*
+
+# IDE
+.idea
