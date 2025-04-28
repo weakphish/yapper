@@ -2,7 +2,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::Widget;
 use tree_ds::prelude::Node;
-use tui_tree_widget::{TreeItem, TreeState};
+use tui_tree_widget::{Tree, TreeItem, TreeState};
 use uuid::Uuid;
 use yap_core::block::Block;
 use yap_core::block_tree::BlockTree;
@@ -14,6 +14,12 @@ pub struct Page {
 }
 
 impl Page {
+    pub fn new() -> Self {
+        Page {
+            internal_tree: BlockTree::new(),
+            state: TreeState::default(),
+        }
+    }
     /// Get a representation of the internal tree, which uses BlockTree from the core library,
     /// as a TreeItem pointed at the root.
     pub fn blocks_as_tree_item(&self) -> TreeItem<Uuid> {
@@ -48,8 +54,11 @@ impl Page {
     }
 }
 
-impl Widget for &BlockTree {
+impl Widget for &Page {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        todo!()
+        let page_as_tree_items = [self.blocks_as_tree_item()];
+        let tree_widg = Tree::new(&page_as_tree_items).unwrap();
+        // defer to tree widget
+        tree_widg.render(area, buf)
     }
 }

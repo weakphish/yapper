@@ -2,7 +2,6 @@ use std::io;
 
 use crate::model::run;
 use model::Model;
-use ratatui::{style::Stylize, widgets::Widget};
 
 mod message;
 mod model;

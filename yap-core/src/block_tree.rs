@@ -1,4 +1,5 @@
 use crate::block::Block;
+use ropey::Rope;
 use tree_ds::prelude::{Node, TraversalStrategy, Tree};
 use uuid::Uuid;
 
@@ -9,9 +10,14 @@ pub struct BlockTree {
 
 impl BlockTree {
     pub fn new() -> Self {
-        Self {
+        let mut new = Self {
             page_tree: Tree::new(Some("")),
-        }
+        };
+        let root_block = Block::new(Rope::from_str("HELLO"), Uuid::now_v7());
+        new.page_tree
+            .add_node(Node::new(Uuid::now_v7(), Some(root_block)), None)
+            .unwrap();
+        new
     }
 
     pub fn get_root(&self) -> Node<Uuid, Block> {
