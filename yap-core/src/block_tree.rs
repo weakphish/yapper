@@ -9,11 +9,12 @@ pub struct BlockTree {
 }
 
 impl BlockTree {
-    pub fn new() -> Self {
+    pub fn new(root_text: &str) -> Self {
         let mut new = Self {
             page_tree: Tree::new(Some("")),
         };
-        let root_block = Block::new(Rope::from_str("HELLO"), Uuid::now_v7());
+        // FIXME: do we want the top level root to be hidden?
+        let root_block = Block::new(Rope::from_str(root_text), Uuid::now_v7());
         new.page_tree
             .add_node(Node::new(Uuid::now_v7(), Some(root_block)), None)
             .unwrap();
