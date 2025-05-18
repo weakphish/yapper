@@ -2,8 +2,8 @@ use crate::message::Message;
 use crate::page::Page;
 use crate::state::ViewState;
 use ratatui::{
-    DefaultTerminal, Frame,
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode}, DefaultTerminal,
+    Frame,
 };
 use std::io;
 use std::time::Duration;
@@ -64,7 +64,9 @@ fn update(model: &mut Model, msg: Message) -> Option<Message> {
             // You can handle cleanup and exit here
             model.view_state = ViewState::Exit;
         }
-        Message::AddBlock => todo!(),
+        Message::AddBlock => {
+            model.page.add_block();
+        }
         Message::MoveUpBlock => todo!(),
         Message::MoveDownBlock => todo!(),
         Message::SelectBlock => todo!(),

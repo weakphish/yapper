@@ -50,6 +50,10 @@ impl Page {
     pub fn state(&self) -> &TreeState<Uuid> {
         &self.tree_state
     }
+
+    pub fn add_block(&mut self, block: Block) {
+        self.block_tree.add_block(block);
+    }
 }
 
 impl Widget for &Page {
