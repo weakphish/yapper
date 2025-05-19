@@ -29,12 +29,6 @@ impl StateMachine {
     pub fn handle_message(&mut self, msg: Message) {
         match msg {
             Message::Quit => self.active_state = ViewState::Exit,
-            Message::Back => self.active_state = self.previous_states.pop().unwrap(),
-            Message::AddBlock => {
-                if self.active_state == ViewState::DailyPage {
-                    self.active_state = ViewState::EditBlock
-                }
-            }
         }
     }
 }
