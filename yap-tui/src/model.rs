@@ -11,11 +11,14 @@ pub struct Model {
     pub exit: bool,
 }
 
-fn view(model: &Model, frame: &mut Frame) {
+/// Take the model and a frame and render as a widget
+pub fn view(model: &Model, frame: &mut Frame) {
     //frame.render_widget(&model, frame.area());
 }
 
-fn update(model: &mut Model, msg: Message) -> Option<Message> {
+/// Take the model and update it based on the message received
+/// TODO: Make the model non-mutable, if possible
+pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
     match msg {
         Message::Quit => {
             // You can handle cleanup and exit here

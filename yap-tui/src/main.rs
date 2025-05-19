@@ -1,12 +1,13 @@
 use std::io;
 
-use model::{Model};
+use model::{Model, update, view};
 use state::ViewState;
+use util::{handle_event, handle_key};
 
 mod message;
 mod model;
 mod state;
-
+mod util;
 
 /// TEA Architecture reference: https://ratatui.rs/concepts/application-patterns/the-elm-architecture/
 /// Runs the application's main loop until the user quits
@@ -26,8 +27,6 @@ fn main() -> io::Result<()> {
             current_message = update(&mut model, current_message.unwrap());
         }
     }
-    Ok(())
     ratatui::restore();
-    app_result
+    Ok(())
 }
-
