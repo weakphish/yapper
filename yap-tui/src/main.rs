@@ -13,7 +13,7 @@ mod util;
 /// Runs the application's main loop until the user quits
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
-    let mut model = Model::default();
+    let mut model = Model::new();
     while model.view_state != ViewState::Exit {
         // Render current view
         terminal.draw(|frame| view(&model, frame))?;
