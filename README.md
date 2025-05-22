@@ -1,6 +1,6 @@
 # Yapper
 
-## Yet Another Powerful Productivity Engine, in Rust.
+## Yet Another Powerful Productivity Engine, in ~~Rust~~ Go?.
 
 ## What?
 
@@ -15,10 +15,10 @@
 
 ### Core
 
-- [ ] Core data structures
-    - [ ] Daily Page
-    - [ ] Tag page (default type)
-    - [ ] Backlinks between blocks
+- [x] Core data structures
+- [ ] Daily Page
+- [ ] Tag page (default type)
+- [ ] Backlinks between blocks
 - [ ] User input on block
 - [ ] Parse and store data
 - [ ] Define API for front-ends
@@ -30,6 +30,6 @@
 ### Future Wishlist
 
 - [ ] Plugins
-    - Lua? PyO3?
+  - Lua?
 - [ ] Vim bindings
-    - [ ] Embed Neovim?
+  - [ ] Embed Neovim?
