@@ -24,7 +24,7 @@ func (m DailyPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyCtrlC:
+		case tea.KeyBackspace:
 			return m, tea.Quit
 		}
 	}
@@ -32,5 +32,5 @@ func (m DailyPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m DailyPageModel) View() string {
-	return ""
+	return "hello world"
 }

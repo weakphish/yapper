@@ -6,34 +6,32 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
-	"github.com/kevm/bubbleo/menu"
 	"github.com/kevm/bubbleo/navstack"
 	shell "github.com/kevm/bubbleo/shell"
 	"github.com/weakphish/yapper/pages"
 )
 
+type PageType int
+
+const (
+	DailyPage PageType = iota
+	FindPage
+	TagPage
+)
+
 // applicationModel is the main application model for the BubbleTea app
 type applicationModel struct {
-	menu menu.Model
+	currentPage tea.Model // TODO: pointer to a model
+	pageStack   []tea.Model
 }
 
 // TODO: load from database
 func initialModel() applicationModel {
-	daily := menu.Choice{
-		Title:       "Daily Page",
-		Description: "Today's daily note page",
-		Model:       pages.DailyPage(),
-	}
-	find := menu.Choice{
-		Title:       "Find Page",
-		Description: "Find a page by name",
-		Model:       pages.FindPage(),
-	}
-
-	choices := []menu.Choice{daily, find}
-
+	// TODO: get today's page
+	today := pages.DailyPage()
 	return applicationModel{
-		menu: menu.New("Pages", choices, nil),
+		currentPage: &today,
+		pageStack:   []tea.Model{},
 	}
 }
 
@@ -50,25 +48,19 @@ func (m applicationModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Cool, what was the actual key pressed?
 		switch msg.String() {
 		// These keys should exit the program.
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		}
 	}
 
-	log.Debug("Menu prior to update: ", "menu", m.menu)
-	updatedMenu, cmd := m.menu.Update(msg)
-	m.menu = updatedMenu.(menu.Model)
-	log.Debug("Menu after update: ", "menu", m.menu)
-	return m, cmd
+	// Subordinate to the page type
+	subMsg, subCmd := m.currentPage.Update(m)
 
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
-	return m, nil
+	return subMsg, subCmd
 }
 
 func (m applicationModel) View() string {
-	// TODO: view
-	return m.menu.View()
+	return m.currentPage.View()
 }
 
 func main() {
