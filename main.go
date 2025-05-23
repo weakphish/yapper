@@ -55,10 +55,10 @@ func (m applicationModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	log.Debug("Menu prior to update: ", m.menu)
+	log.Debug("Menu prior to update: ", "menu", m.menu)
 	updatedMenu, cmd := m.menu.Update(msg)
 	m.menu = updatedMenu.(menu.Model)
-	log.Debug("Menu after update: ", m.menu)
+	log.Debug("Menu after update: ", "menu", m.menu)
 	return m, cmd
 
 	// Return the updated model to the Bubble Tea runtime for processing.
@@ -73,15 +73,10 @@ func (m applicationModel) View() string {
 
 func main() {
 	// Initialize logging
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
-	}
-	logger := log.SetLevel(log.DebugLevel)
+	f, _ := os.OpenFile("log.json", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+	log.SetOutput(f)
+	log.SetFormatter(log.JSONFormatter) // Use JSON format
+	log.SetLevel(log.DebugLevel)
 	log.Info("Initializing Yapper...")
 
 	// Initialize application model
