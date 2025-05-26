@@ -1,6 +1,6 @@
 # Yapper
 
-## Yet Another Powerful Productivity Engine, in ~~Rust~~ Go?.
+## Yet Another Powerful Productivity Engine, in Rust.
 
 ## What?
 
