@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"log/slog"
+
+	"github.com/google/uuid"
+)
 
 type BlockType int
 
@@ -21,8 +25,10 @@ type Block struct {
 	content       string
 }
 
+// NewBlockWithParent creates a block with a given block as the parent,
+// and modifies the parent, adding the new block as a child
 func NewBlockWithParent(parent *Block) Block {
-	return Block{
+	b := Block{
 		id:            uuid.New(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
@@ -30,10 +36,13 @@ func NewBlockWithParent(parent *Block) Block {
 		children:      []*Block{},
 		content:       "",
 	}
+	parent.children = append(parent.children, &b)
+	return b
 }
 
-func NewBlock() Block {
-	return Block{
+// NewBlock creates a basic block with no parent or children
+func NewBlock() *Block {
+	b := Block{
 		id:            uuid.New(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
@@ -41,4 +50,22 @@ func NewBlock() Block {
 		children:      []*Block{},
 		content:       "",
 	}
+	slog.Debug("Created a new block", "block", b)
+	return &b
+}
+
+func (b *Block) GetContent() string {
+	return b.content
+}
+
+// UpdateContent replaces a block's content with a new string
+func (b *Block) UpdateContent(content string) {
+	b.content = content
+}
+
+// RenderBlock returns a charm-compatible string that renders the
+// block content
+func (b *Block) RenderBlock() string {
+	// TODO: render a block
+	return b.content
 }

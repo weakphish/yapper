@@ -2,33 +2,23 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/log"
-	"github.com/kevm/bubbleo/navstack"
-	shell "github.com/kevm/bubbleo/shell"
 	"github.com/weakphish/yapper/pages"
-)
-
-type PageType int
-
-const (
-	DailyPage PageType = iota
-	FindPage
-	TagPage
 )
 
 // applicationModel is the main application model for the BubbleTea app
 type applicationModel struct {
-	currentPage tea.Model // TODO: pointer to a model
+	currentPage tea.Model
 	pageStack   []tea.Model
 }
 
-// TODO: load from database
 func initialModel() applicationModel {
 	// TODO: get today's page
-	today := pages.DailyPage()
+	today := pages.NewDailyPage()
+
 	return applicationModel{
 		currentPage: &today,
 		pageStack:   []tea.Model{},
@@ -37,7 +27,7 @@ func initialModel() applicationModel {
 
 func (m applicationModel) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	// TODO: Load application from database, load today's daily page
+	// TODO: Load application from database, load today's daily page as currentPage
 	return nil
 }
 
@@ -53,33 +43,36 @@ func (m applicationModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Subordinate to the page type
+	// Subordinate to the current page type
 	subMsg, subCmd := m.currentPage.Update(m)
+	slog.Debug("Got message from the model's current page", "subMsg", subMsg, "subCmd", subCmd)
 
 	return subMsg, subCmd
 }
 
 func (m applicationModel) View() string {
-	return m.currentPage.View()
+	view := m.currentPage.View()
+	slog.Debug("Deferring to current page's view", "view", view)
+	return view
 }
 
 func main() {
 	// Initialize logging
-	f, _ := os.OpenFile("log.json", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-	log.SetOutput(f)
-	log.SetFormatter(log.JSONFormatter) // Use JSON format
-	log.SetLevel(log.DebugLevel)
-	log.Info("Initializing Yapper...")
+	logFile, _ := os.OpenFile("yap.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+	logHandler := slog.NewTextHandler(logFile, &slog.HandlerOptions{
+		Level:     slog.LevelDebug,
+		AddSource: false,
+	})
+	logger := slog.New(logHandler)
+	slog.SetDefault(logger)
+
+	slog.Info("Logging initialized")
 
 	// Initialize application model
 	m := initialModel()
-	s := shell.New()
-
-	// Start the page stack on the home page, which uses the base applicationModel defined here
-	s.Navstack.Push(navstack.NavigationItem{Model: m, Title: "Yapper"})
 
 	// Run!
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	_, err := p.Run()
 	if err != nil {

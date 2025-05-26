@@ -6,12 +6,12 @@ import (
 )
 
 type FindPageModel struct {
-	pages []model.Page
+	pages []model.PageTree
 }
 
 func FindPage() FindPageModel {
 	return FindPageModel{
-		pages: []model.Page{},
+		pages: []model.PageTree{},
 	}
 }
 
