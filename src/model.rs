@@ -34,6 +34,9 @@ pub enum RunningState {
 
 pub enum Message {
     Quit,
+    MoveDown,
+    MoveUp,
+    AddBlock,
 }
 
 /// "A key feature of TEA is immutability.
@@ -42,6 +45,7 @@ pub enum Message {
 pub fn update(model: &Model, msg: Message) -> Model {
     match msg {
         Message::Quit => todo!(),
+        Message::MoveDown | Message::MoveUp | Message::AddBlock => todo!(),
     }
 }
 
