@@ -1,52 +1,55 @@
- use ratatui::{
-        backend::{Backend, CrosstermBackend},
-        crossterm::{
-            terminal::{
-                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-            },
-            ExecutableCommand,
-        },
-        Terminal,
-    };
-    use std::{io::stdout, panic};
+use model::{handle_event, Model, RunningState};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    Terminal,
+};
+use std::cmp::PartialEq;
+use std::{io::stdout, panic};
 
-#[derive(Debug, Default, PartialEq, Eq)]
-struct Model {
-    runnning_state: RunningState,
-    blocks: Vec<Block>,
+mod model;
+
+pub fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    Ok(terminal)
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-struct Block {
-    tags: Vec<String>,
-    content: Vec<String>,
+pub fn restore_terminal() -> color_eyre::Result<()> {
+    stdout().execute(LeaveAlternateScreen)?;
+    disable_raw_mode()?;
+    Ok(())
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-enum RunningState {
-    #[default]
-    Running,
-    Done,
+pub fn install_panic_hook() {
+    let original_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        stdout().execute(LeaveAlternateScreen).unwrap();
+        disable_raw_mode().unwrap();
+        original_hook(panic_info);
+    }));
 }
 
-enum Message {
-    // TODO: define messages
-}
+fn main() -> color_eyre::Result<()> {
+    install_panic_hook();
+    let mut terminal = init_terminal()?;
+    let mut model = Model::default();
 
-/// Hence, the update function should avoid direct mutation of the model.
-/// "A key feature of TEA is immutability.
-/// Instead, it should produce a new instance of the model reflecting the desired changes."
-fn update(model: &Model, msg: Message) -> Model {
-    match msg {
-        // Match each possible message and decide how the model should change
-        // Return a new model reflecting those changes
+    while *model.running_state() != RunningState::Done {
+        // Render the current view
+        terminal.draw(|f| model::view(&model, f))?;
+
+        // Handle events and map to a Message
+        let mut current_msg = handle_event(&model)?;
+
+        // Update the model by processing the message
+        model = model::update(&model, current_msg.unwrap());
     }
-}
 
-fn view(model: &Model) {
-    //... use `ratatui` functions to draw your UI based on the model's state
-}
-
-fn main() {
-    todo!()
+    restore_terminal()?;
+    Ok(())
 }
