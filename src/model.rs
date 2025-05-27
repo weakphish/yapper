@@ -1,12 +1,12 @@
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Model {
-    running_state: RunningState,
+    running_state: ApplicationView,
     blocks: Vec<Block>,
     block_cursor: usize,
 }
 
 impl Model {
-    pub fn running_state(&self) -> &RunningState {
+    pub fn running_state(&self) -> &ApplicationView {
         &self.running_state
     }
 
@@ -24,9 +24,26 @@ impl Model {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum ApplicationView {
+    #[default]
+    Main,
+    Editing,
+    Done,
+}
+
+#[derive(Clone)]
+pub enum Message {
+    Quit,
+    MoveDown,
+    MoveUp,
+    AddBlock,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Block {
     tags: Vec<String>,
     content: Vec<String>,
+    editing_block: bool,
 }
 
 impl Block {
@@ -45,23 +62,18 @@ impl Block {
     pub fn set_content(&mut self, content: Vec<String>) {
         self.content = content;
     }
+
+    pub fn editing_block(&self) -> bool {
+        self.editing_block
+    }
+
+    pub fn set_editing_block(&mut self, editing_block: bool) {
+        self.editing_block = editing_block;
+    }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum RunningState {
-    #[default]
-    Running,
-    Done,
-}
-
-#[derive(Clone)]
-pub enum Message {
-    Quit,
-    MoveDown,
-    MoveUp,
-    AddBlock,
-}
-
+/// Represents an update returned from the `update` function, derived from the TEA architecture.
+/// Wraps an optional `Message` and the model.
 #[derive(Clone)]
 pub struct Update {
     model: Model,

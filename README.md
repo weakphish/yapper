@@ -8,28 +8,18 @@
   software
 - dump info in, let organization evolve organically
 - tasks as first-class citizens
-- zoomable blocks, infinitely nested as a tree representation
 - custom types represented by a tag's page
 
-## Roadmap
+## Design Notes
 
-### Core
+- Two main 'screens':
+    - Main view - all blocks in order of most recent first
+        - Sub(?) view for editing / adding a block
+    - Tag view - view all blocks/tasks with a given tag
 
-- [x] Core data structures
-- [ ] Daily Page
-- [ ] Tag page (default type)
-- [ ] Backlinks between blocks
-- [ ] User input on block
-- [ ] Parse and store data
-- [ ] Define API for front-ends
-
-### TUI
-
-- [ ] Render a basic "daily" page for dumping as a tree
-
-### Future Wishlist
+## Future Wishlist
 
 - [ ] Plugins
-  - Lua?
+    - Lua?
 - [ ] Vim bindings
-  - [ ] Embed Neovim?
+    - [ ] Embed Neovim?

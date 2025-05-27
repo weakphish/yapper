@@ -1,10 +1,10 @@
 use crate::model::{Message, Model, Update};
 use ratatui::crossterm::event;
 use ratatui::crossterm::event::{Event, KeyCode};
-use ratatui::prelude::{Line, Text};
+use ratatui::prelude::{Color, Line, Text};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::Span;
-use ratatui::widgets::{Block, Paragraph};
+use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::Frame;
 use std::time::Duration;
 
@@ -37,6 +37,17 @@ pub fn update(model: &Model, msg: Message) -> Update {
 }
 
 pub fn view(model: &Model, frame: &mut Frame) {
+    // Edit block
+    // draw a ratatui Block that will contain the popup with a title
+    if let Some(editing) = &model.editing_block() {
+        let popup_block = Block::default()
+            .title("Editing block")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let area = centered_rect(60, 25, frame.area());
+        frame.render_widget(popup_block, area);
+
     // Render blocks
     model.blocks().iter().enumerate().for_each(|(i, block)| {
         let spans: Vec<Span> = block

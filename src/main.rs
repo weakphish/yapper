@@ -1,4 +1,4 @@
-use model::{Model, RunningState};
+use model::{ApplicationView, Model};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -41,7 +41,7 @@ fn main() -> color_eyre::Result<()> {
     let mut terminal = init_terminal()?;
     let mut model = Model::default();
 
-    while *model.running_state() != RunningState::Done {
+    while *model.running_state() != ApplicationView::Done {
         // Render the current view
         terminal.draw(|f| tea::view(&model, f))?;
 
