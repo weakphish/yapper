@@ -2,6 +2,7 @@
 pub struct Model {
     running_state: RunningState,
     blocks: Vec<Block>,
+    block_cursor: usize,
 }
 
 impl Model {
@@ -12,12 +13,38 @@ impl Model {
     pub fn blocks(&self) -> &Vec<Block> {
         &self.blocks
     }
+
+    pub fn set_block_cursor(&mut self, block_cursor: usize) {
+        self.block_cursor = block_cursor;
+    }
+
+    pub fn block_cursor(&self) -> usize {
+        self.block_cursor
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-struct Block {
+pub struct Block {
     tags: Vec<String>,
     content: Vec<String>,
+}
+
+impl Block {
+    pub fn tags(&self) -> &Vec<String> {
+        &self.tags
+    }
+
+    pub fn content(&self) -> &Vec<String> {
+        &self.content
+    }
+
+    pub fn set_tags(&mut self, tags: Vec<String>) {
+        self.tags = tags;
+    }
+
+    pub fn set_content(&mut self, content: Vec<String>) {
+        self.content = content;
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

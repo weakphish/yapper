@@ -1,6 +1,10 @@
 use crate::model::{Message, Model, Update};
 use ratatui::crossterm::event;
 use ratatui::crossterm::event::{Event, KeyCode};
+use ratatui::prelude::{Line, Text};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Paragraph};
 use ratatui::Frame;
 use std::time::Duration;
 
@@ -8,14 +12,49 @@ use std::time::Duration;
 /// Hence, the update function should avoid direct mutation of the model.
 /// Instead, it should produce a new instance of the model reflecting the desired changes."
 pub fn update(model: &Model, msg: Message) -> Update {
+    let mut new_model = model.clone();
     match msg {
         Message::Quit => todo!(),
-        Message::MoveDown | Message::MoveUp | Message::AddBlock => todo!(),
+        Message::MoveDown => {
+            // handle wrapping around the end of the list
+            if model.block_cursor() + 1 > model.blocks().len() {
+                new_model.set_block_cursor(0);
+            } else {
+                new_model.set_block_cursor(model.block_cursor() + 1);
+            }
+        }
+        Message::MoveUp => {
+            // handle wrapping from the beginning of the list to the end of the list
+            if model.block_cursor() == 0 {
+                new_model.set_block_cursor(model.blocks().len() - 1);
+            } else {
+                new_model.set_block_cursor(model.block_cursor() - 1);
+            }
+        }
+        Message::AddBlock => todo!(),
     }
+    Update::new(new_model, None)
 }
 
 pub fn view(model: &Model, frame: &mut Frame) {
-    //... use `ratatui` functions to draw your UI based on the model's state
+    // Render blocks
+    model.blocks().iter().enumerate().for_each(|(i, block)| {
+        let spans: Vec<Span> = block
+            .content()
+            .iter()
+            .map(|line| {
+                // bold style if the span is on the current block
+                if model.block_cursor() == i {
+                    Span::styled(line, Style::default().add_modifier(Modifier::BOLD))
+                } else {
+                    Span::from(line)
+                }
+            })
+            .collect();
+        let line = Line::from(spans);
+        let text = Text::from(line);
+        frame.render_widget(Paragraph::new(text).block(Block::bordered()), frame.area());
+    })
 }
 
 /// Convert Event to Message
