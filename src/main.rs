@@ -1,4 +1,4 @@
-use model::{handle_event, Model, RunningState};
+use model::{Model, RunningState};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -9,8 +9,10 @@ use ratatui::{
 };
 use std::cmp::PartialEq;
 use std::{io::stdout, panic};
+use tea::handle_event;
 
 mod model;
+mod tea;
 
 pub fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
     enable_raw_mode()?;
@@ -41,13 +43,21 @@ fn main() -> color_eyre::Result<()> {
 
     while *model.running_state() != RunningState::Done {
         // Render the current view
-        terminal.draw(|f| model::view(&model, f))?;
+        terminal.draw(|f| tea::view(&model, f))?;
 
         // Handle events and map to a Message
-        let mut current_msg = handle_event(&model)?;
+        if let Some(msg) = handle_event(&model)? {
+            // Process messages until there are no more
+            let mut current_model = model;
+            let mut current_msg = Some(msg);
 
-        // Update the model by processing the message
-        model = model::update(&model, current_msg.unwrap());
+            while let Some(msg) = current_msg {
+                let update = tea::update(&current_model, msg);
+                (current_model, current_msg) = update.into_parts();
+            }
+
+            model = current_model;
+        }
     }
 
     restore_terminal()?;

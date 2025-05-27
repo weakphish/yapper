@@ -1,9 +1,4 @@
-use ratatui::crossterm::event;
-use ratatui::crossterm::event::{Event, KeyCode};
-use ratatui::Frame;
-use std::time::Duration;
-
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Model {
     running_state: RunningState,
     blocks: Vec<Block>,
@@ -19,7 +14,7 @@ impl Model {
     }
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 struct Block {
     tags: Vec<String>,
     content: Vec<String>,
@@ -32,6 +27,7 @@ pub enum RunningState {
     Done,
 }
 
+#[derive(Clone)]
 pub enum Message {
     Quit,
     MoveDown,
@@ -39,38 +35,27 @@ pub enum Message {
     AddBlock,
 }
 
-/// "A key feature of TEA is immutability.
-/// Hence, the update function should avoid direct mutation of the model.
-/// Instead, it should produce a new instance of the model reflecting the desired changes."
-pub fn update(model: &Model, msg: Message) -> Model {
-    match msg {
-        Message::Quit => todo!(),
-        Message::MoveDown | Message::MoveUp | Message::AddBlock => todo!(),
+#[derive(Clone)]
+pub struct Update {
+    model: Model,
+    message: Option<Message>,
+}
+
+impl Update {
+    pub fn new(model: Model, message: Option<Message>) -> Self {
+        Self { model, message }
     }
-}
 
-pub fn view(model: &Model, frame: &mut Frame) {
-    //... use `ratatui` functions to draw your UI based on the model's state
-}
-
-/// Convert Event to Message
-///
-/// We don't need to pass in a `model` to this function in this example
-/// but you might need it as your project evolves
-pub fn handle_event(_: &Model) -> color_eyre::Result<Option<Message>> {
-    if event::poll(Duration::from_millis(250))? {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Press {
-                return Ok(handle_key(key));
-            }
-        }
+    pub fn into_parts(self) -> (Model, Option<Message>) {
+        (self.model, self.message)
     }
-    Ok(None)
-}
 
-fn handle_key(key: event::KeyEvent) -> Option<Message> {
-    match key.code {
-        KeyCode::Char('q') => Some(Message::Quit),
-        _ => None,
+    // Keep existing reference methods if needed for backward compatibility
+    pub fn model(&self) -> &Model {
+        &self.model
+    }
+
+    pub fn message(&self) -> &Option<Message> {
+        &self.message
     }
 }
