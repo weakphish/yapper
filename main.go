@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/weakphish/yapper/model"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,15 +12,18 @@ import (
 
 // Model is the main application model for the BubbleTea app
 type Model struct {
-	blocks []model.Block
-	cursor uint
+	blocks   []model.Block
+	cursor   uint
+	textArea textarea.Model
 }
 
 // TODO load from database
 func initialModel() Model {
+	ti := textarea.New()
 	return Model{
 		[]model.Block{},
 		0,
+		ti,
 	}
 }
 
@@ -29,6 +33,12 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	if m.textArea.Focused() { // Get updates from the text area
+		m.textArea, cmd = m.textArea.Update(msg)
+	}
+
 	switch msg := msg.(type) {
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -37,7 +47,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// These keys should exit the program.
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "a":
+			m.textArea.Focus()
+		case "esc":
+			if m.textArea.Focused() {
+				m.textArea.Blur()
+			}
+			// TODO: edit block by getting block under cursor
 		}
+
+		return m, cmd
 	}
 
 	// Return the updated model to the Bubble Tea runtime for processing.
@@ -47,6 +66,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	// TODO: view
+	if m.textArea.Focused() {
+		return m.textArea.View()
+	}
 	return ""
 }
 
