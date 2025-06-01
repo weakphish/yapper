@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type BlockType int
 
@@ -14,6 +18,7 @@ const (
 // N many children.
 type Block struct {
 	id            uuid.UUID
+	date          time.Time
 	dependentIds  []uuid.UUID
 	dependencyIds []uuid.UUID
 	parent        *Block
@@ -21,24 +26,29 @@ type Block struct {
 	content       string
 }
 
-func NewBlockWithParent(parent *Block) Block {
+func NewBlockWithParent(content string, parent *Block) Block {
 	return Block{
 		id:            uuid.New(),
+		date:          time.Now(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
 		parent:        parent,
 		children:      []*Block{},
-		content:       "",
+		content:       content,
 	}
 }
 
-func NewBlock() Block {
+func NewBlock(content string) Block {
 	return Block{
 		id:            uuid.New(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
 		parent:        nil,
 		children:      []*Block{},
-		content:       "",
+		content:       content,
 	}
+}
+
+func (b *Block) GetContent() string {
+	return b.content
 }

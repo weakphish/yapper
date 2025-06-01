@@ -52,6 +52,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			if m.textArea.Focused() {
 				m.textArea.Blur()
+				// TODO: Get content of text area and store in a block
+				newBlock := model.NewBlock(m.textArea.Value())
+				m.blocks = append(m.blocks, newBlock)
+				m.textArea.Reset()
 			}
 			// TODO: edit block by getting block under cursor
 		}
@@ -69,7 +73,12 @@ func (m Model) View() string {
 	if m.textArea.Focused() {
 		return m.textArea.View()
 	}
-	return ""
+
+	var viewString string
+	for _, block := range m.blocks {
+		viewString += block.GetContent() + "\n"
+	}
+	return viewString
 }
 
 func main() {
