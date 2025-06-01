@@ -11,17 +11,15 @@ import (
 
 // Model is the main application model for the BubbleTea app
 type Model struct {
-	pages        []model.Page
-	currentPage  *model.Page
-	currentBlock *model.Block
+	blocks []model.Block
+	cursor uint
 }
 
 // TODO load from database
 func initialModel() Model {
 	return Model{
-		pages:        []model.Page{},
-		currentPage:  nil,
-		currentBlock: nil,
+		[]model.Block{},
+		0,
 	}
 }
 
