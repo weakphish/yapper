@@ -5,10 +5,21 @@ import (
 	"os"
 
 	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/weakphish/yapper/model"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// Default to everforest
+var style = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(lipgloss.Color("#D3C6AA")).
+	Background(lipgloss.Color("#2D353B")).
+	PaddingTop(2).
+	PaddingLeft(4).
+	Width(22)
 
 // Model is the main application model for the BubbleTea app
 type Model struct {
@@ -47,8 +58,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// These keys should exit the program.
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		// Add a new block
 		case "a":
 			m.textArea.Focus()
+		// If in textArea, save input to block
 		case "esc":
 			if m.textArea.Focused() {
 				m.textArea.Blur()
@@ -78,7 +91,12 @@ func (m Model) View() string {
 	for _, block := range m.blocks {
 		viewString += block.GetContent() + "\n"
 	}
-	return viewString
+	str, err := glamour.Render(viewString, "dark")
+	if err != nil {
+		// FIXME: setup and use slog
+		fmt.Println(err)
+	}
+	return str
 }
 
 func main() {
