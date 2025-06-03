@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/weakphish/yapper/logger"
 )
 
 type BlockType int
@@ -28,8 +29,21 @@ type Block struct {
 }
 
 func NewBlockWithParent(content string, blockType BlockType, parent *Block) Block {
+	id := uuid.New()
+	if parent == nil {
+		logger.Warn("creating block with nil parent", "id", id.String())
+		return NewBlock(content)
+	}
+	if content == "" {
+		logger.Warn("creating block with empty content", "id", id.String())
+	}
+	logger.Debug("creating new block with parent", 
+		"id", id.String(), 
+		"type", blockType, 
+		"content", content, 
+		"parent_id", parent.id.String())
 	return Block{
-		id:            uuid.New(),
+		id:            id,
 		date:          time.Now(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
@@ -41,8 +55,13 @@ func NewBlockWithParent(content string, blockType BlockType, parent *Block) Bloc
 }
 
 func NewBlock(content string) Block {
+	id := uuid.New()
+	logger.Debug("creating new note block", 
+		"id", id.String(), 
+		"content", content)
 	return Block{
-		id:            uuid.New(),
+		id:            id,
+		date:          time.Now(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
 		parent:        nil,
@@ -54,8 +73,13 @@ func NewBlock(content string) Block {
 
 // NewTaskBlock creates a new task block
 func NewTaskBlock(content string) Block {
+	id := uuid.New()
+	logger.Debug("creating new task block", 
+		"id", id.String(), 
+		"content", content)
 	return Block{
-		id:            uuid.New(),
+		id:            id,
+		date:          time.Now(),
 		dependentIds:  []uuid.UUID{},
 		dependencyIds: []uuid.UUID{},
 		parent:        nil,
@@ -66,11 +90,19 @@ func NewTaskBlock(content string) Block {
 }
 
 func (b *Block) GetContent() string {
+	logger.Debug("getting block content", "id", b.id.String())
 	return b.content
 }
 
 // SetContent sets the block's content
 func (b *Block) SetContent(content string) {
+	if content == "" {
+		logger.Warn("setting empty content for block", "id", b.id.String())
+	}
+	logger.Debug("setting block content", 
+		"id", b.id.String(), 
+		"old_content", b.content, 
+		"new_content", content)
 	b.content = content
 }
 
@@ -81,15 +113,29 @@ func (b *Block) GetType() BlockType {
 
 // SetType sets the block's type
 func (b *Block) SetType(blockType BlockType) {
+	if b.blockType == blockType {
+		logger.Warn("attempting to set block type to same value", 
+			"id", b.id.String(), 
+			"type", blockType)
+		return
+	}
+	logger.Debug("changing block type", 
+		"id", b.id.String(), 
+		"old_type", b.blockType, 
+		"new_type", blockType)
 	b.blockType = blockType
 }
 
 // IsTask returns true if the block is a task
 func (b *Block) IsTask() bool {
-	return b.blockType == Task
+	result := b.blockType == Task
+	logger.Debug("checking if block is task", "id", b.id.String(), "is_task", result)
+	return result
 }
 
 // IsNote returns true if the block is a note
 func (b *Block) IsNote() bool {
-	return b.blockType == Note
+	result := b.blockType == Note
+	logger.Debug("checking if block is note", "id", b.id.String(), "is_note", result)
+	return result
 }
