@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -14,56 +15,82 @@ import (
 )
 
 // Styles for the UI
+// Default to everforest
 var (
 	headerStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#D3C6AA")).
-		Background(lipgloss.Color("#2D353B")).
-		PaddingLeft(2).
-		Width(60).
-		Align(lipgloss.Center)
+			Bold(true).
+			Foreground(lipgloss.Color("#D3C6AA")).
+			Background(lipgloss.Color("#2D353B")).
+			PaddingLeft(2).
+			Width(60).
+			Align(lipgloss.Center)
 
 	normalBlockStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#D3C6AA")).
-		PaddingLeft(2)
+				Foreground(lipgloss.Color("#D3C6AA")).
+				PaddingLeft(2)
 
 	selectedBlockStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFFFF")).
-		Background(lipgloss.Color("#4D5A63")).
-		PaddingLeft(2)
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#4D5A63")).
+				PaddingLeft(2)
 
 	taskStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#A7C080"))
+			Foreground(lipgloss.Color("#A7C080")).
+			Bold(false)
+
+	noteStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#D3C6AA"))
 
 	completedTaskStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#575F66")).
-		Strikethrough(true)
+				Foreground(lipgloss.Color("#575F66")).
+				Strikethrough(true)
 
 	footerStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#A7C080")).
-		PaddingTop(1)
+			Foreground(lipgloss.Color("#A7C080")).
+			PaddingTop(1)
+
+	statusBadgeStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#3D484D")).
+				Bold(true).
+				Padding(0, 1).
+				Width(1).
+				Align(lipgloss.Center)
+
+	taskBlockStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#343F44")).
+			MarginLeft(1).
+			Padding(0, 1)
+
+	// Use different styles for cursor selection based on block type
+	selectedTaskStyle = selectedBlockStyle.
+				Background(lipgloss.Color("#3D484D"))
+
+	selectedNoteStyle = selectedBlockStyle
 )
 
 // Model is the main application model for the BubbleTea app
 type Model struct {
-	blocks   []model.Block
-	cursor   uint
-	textArea textarea.Model
+	blocks       []model.Block
+	cursor       uint
+	noteTextArea textarea.Model
+	taskTextArea textarea.Model
 }
 
 // Initialize model with a new textarea
 func initialModel() Model {
-	logger.Debug("initializing model")
+	slog.Debug("initializing model")
 	ti := textarea.New()
+	tiTwo := textarea.New()
 	return Model{
 		[]model.Block{},
 		0,
 		ti,
+		tiTwo,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	logger.Debug("initializing bubble tea model")
+	slog.Debug("initializing bubble tea model")
 	// Just return `nil`, which means "no I/O right now, please."
 	return nil
 }
@@ -71,13 +98,58 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	if m.textArea.Focused() { // Get updates from the text area
-		logger.Debug("updating text area")
-		var err error
-		m.textArea, cmd = m.textArea.Update(msg)
-		if err != nil {
-			logger.Error("failed to update text area", "error", err)
+	// Get updates from the note text area if it's focused and return early
+	if m.noteTextArea.Focused() {
+		slog.Debug("updating note text area")
+		m.noteTextArea, cmd = m.noteTextArea.Update(msg)
+		// If in textArea, save input to block
+		switch msg := msg.(type) {
+		// Is it a key press?
+		case tea.KeyMsg:
+			// Cool, what was the actual key pressed?
+			switch msg.String() {
+			case "esc":
+				slog.Debug("exiting text entry mode")
+				m.noteTextArea.Blur()
+				// Create a new block from the text area content
+				content := m.noteTextArea.Value()
+				var newBlock model.Block
+
+				// Check task creation context
+				slog.Info("creating note block", "content", content)
+				newBlock = model.NewNoteBlock(content)
+				slog.Debug("note block created", "is_task", newBlock.IsTask(), "block_type", newBlock.GetTypeString())
+				m.blocks = append(m.blocks, newBlock)
+				m.noteTextArea.Reset()
+			}
 		}
+		return m, cmd
+	}
+	if m.taskTextArea.Focused() {
+		slog.Debug("updating task text area")
+		m.taskTextArea, cmd = m.taskTextArea.Update(msg)
+		// If in textArea, save input to block
+		switch msg := msg.(type) {
+		// Is it a key press?
+		case tea.KeyMsg:
+			// Cool, what was the actual key pressed?
+			switch msg.String() {
+			case "esc":
+				slog.Debug("exiting text entry mode")
+				m.taskTextArea.Blur()
+				// Create a new block from the text area content
+				content := m.taskTextArea.Value()
+				var newBlock model.Block
+
+				// Check task creation context
+				slog.Info("creating task block", "content", content)
+				newBlock = model.NewTaskBlock(content)
+				slog.Debug("task block created", "is_task", newBlock.IsTask(), "block_type", newBlock.GetTypeString())
+				m.blocks = append(m.blocks, newBlock)
+				m.taskTextArea.Reset()
+			}
+		}
+		return m, cmd
 	}
 
 	switch msg := msg.(type) {
@@ -87,44 +159,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		// These keys should exit the program.
 		case "ctrl+c", "q":
-			logger.Info("user initiated exit")
+			slog.Info("user initiated exit")
 			return m, tea.Quit
 		// Add a new block
 		case "a":
-			logger.Info("adding new note block")
-			m.textArea.Focus()
+			slog.Info("adding new note block")
+			m.noteTextArea.Focus()
 		// Add a new task block
 		case "t":
-			logger.Info("adding new task block")
-			m.textArea.SetValue("- [ ] ")
-			m.textArea.Focus()
-		// If in textArea, save input to block
-		case "esc":
-			if m.textArea.Focused() {
-				logger.Debug("exiting text entry mode")
-				m.textArea.Blur()
-				// Create a new block from the text area content
-				content := m.textArea.Value()
-				var newBlock model.Block
-				
-				// Check if the content starts with a task marker
-				if len(content) >= 5 && (content[:5] == "- [ ]" || content[:5] == "- [x]") {
-					logger.Info("creating new task block", "content", content)
-					newBlock = model.NewTaskBlock(content)
-				} else {
-					logger.Info("creating new note block", "content", content)
-					newBlock = model.NewBlock(content)
-				}
-				m.blocks = append(m.blocks, newBlock)
-				m.textArea.Reset()
-			}
+			slog.Info("adding new task block (using 't' shortcut)")
+			m.taskTextArea.Focus()
+
 		// Add navigation keys
 		case "j", "down":
 			if uint(len(m.blocks)) > 0 {
 				m.cursor = (m.cursor + 1) % uint(len(m.blocks))
-				logger.Debug("moved cursor down", "new_position", m.cursor)
+				slog.Debug("moved cursor down", "new_position", m.cursor)
 			} else {
-				logger.Warn("tried to navigate down, but no blocks exist")
+				slog.Warn("tried to navigate down, but no blocks exist")
 			}
 		case "k", "up":
 			if uint(len(m.blocks)) > 0 {
@@ -133,39 +185,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					m.cursor--
 				}
-				logger.Debug("moved cursor up", "new_position", m.cursor)
+				slog.Debug("moved cursor up", "new_position", m.cursor)
 			} else {
-				logger.Warn("tried to navigate up, but no blocks exist")
+				slog.Warn("tried to navigate up, but no blocks exist")
 			}
 		case "e":
-			// Edit the current block
-			if len(m.blocks) > 0 && int(m.cursor) < len(m.blocks) {
-				logger.Info("editing block", "block_id", m.cursor)
-				m.textArea.SetValue(m.blocks[m.cursor].GetContent())
-				m.textArea.Focus()
-			} else {
-				logger.Warn("tried to edit, but no valid block at cursor position", "cursor", m.cursor, "blocks", len(m.blocks))
-			}
+			// TODO: Edit the current block
+			slog.Info("TODO: edit current block")
 		case "space":
 			// Toggle task completion if the current block is a task
 			if len(m.blocks) > 0 && int(m.cursor) < len(m.blocks) {
 				block := &m.blocks[m.cursor]
 				if block.IsTask() {
-					content := block.GetContent()
-					if strings.HasPrefix(content, "- [ ]") {
-						logger.Info("marking task as complete", "task", content)
-						block.SetContent("- [x]" + content[5:])
-					} else if strings.HasPrefix(content, "- [x]") {
-						logger.Info("marking task as incomplete", "task", content)
-						block.SetContent("- [ ]" + content[5:])
+					// Toggle task completion status
+					success := block.ToggleTask()
+					if success {
+						slog.Info("toggled task completion", "block_id", block.GetID(), "completed", block.IsComplete())
 					} else {
-						logger.Warn("task has invalid format", "content", content)
+						slog.Warn("failed to toggle task", "block_id", block.GetID())
 					}
 				} else {
-					logger.Debug("space pressed on non-task block", "block_type", block.GetType())
+					slog.Debug("space pressed on non-task block", "block_type", block.GetTypeString())
 				}
 			} else {
-				logger.Warn("tried to toggle task, but no valid block at cursor position", "cursor", m.cursor, "blocks", len(m.blocks))
+				slog.Warn("tried to toggle task, but no valid block at cursor position", "cursor", m.cursor, "blocks", len(m.blocks))
 			}
 		}
 
@@ -178,59 +221,70 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.textArea.Focused() {
-		return m.textArea.View()
+	if m.noteTextArea.Focused() {
+		return m.noteTextArea.View()
 	}
 
 	var output strings.Builder
-	
+
 	// Add a header
 	output.WriteString(headerStyle.Render("Yapper Notes") + "\n\n")
-	
-	if len(m.blocks) == 0 {
-		output.WriteString(normalBlockStyle.Render("No blocks yet. Press 'a' to add a note or 't' to add a task."))
-		output.WriteString("\n\n")
-	} else {
-		for i, block := range m.blocks {
-			// Get content and prepare styles
-			content := block.GetContent()
-			var blockStyle lipgloss.Style
-			
-			// Determine the style based on selection
-			if uint(i) == m.cursor {
-				blockStyle = selectedBlockStyle
-			} else {
-				blockStyle = normalBlockStyle
-			}
-			
-			// Format tasks with appropriate styling
+
+	for i, block := range m.blocks {
+		// Get content and prepare styles
+		content := block.GetContent()
+		var blockStyle lipgloss.Style
+
+		// Determine the style based on selection and block type
+		if uint(i) == m.cursor {
 			if block.IsTask() {
-				if !strings.HasPrefix(content, "- [") {
-					content = "- [ ] " + content
-				}
-				
-				// Apply completed task styling if needed
-				if strings.HasPrefix(content, "- [x]") {
-					content = completedTaskStyle.Render(content)
-				} else {
-					content = taskStyle.Render(content)
-				}
+				blockStyle = selectedTaskStyle
+			} else {
+				blockStyle = selectedNoteStyle
 			}
-			
-			// Render the block with the appropriate style
-			output.WriteString(blockStyle.Render(content))
-			output.WriteString("\n")
+		} else {
+			blockStyle = normalBlockStyle
 		}
+
+		// Format tasks with appropriate styling
+		if block.IsTask() {
+			// Get raw content
+			content = block.GetContent()
+			slog.Debug("rendering task block", "id", block.GetID(), "content", content, "is_task", block.IsTask(), "block_type", block.GetTypeString(), "completed", block.IsComplete())
+
+			// Create a task block with status badge
+			var statusBadge string
+			var taskContent string
+
+			// Format based on completion status
+			if block.IsComplete() {
+				statusBadge = statusBadgeStyle.Foreground(lipgloss.Color("#A7C080")).Render("✓")
+				taskContent = completedTaskStyle.Render(content)
+				slog.Debug("rendering completed task", "id", block.GetID(), "completed", block.IsComplete())
+			} else {
+				statusBadge = statusBadgeStyle.Foreground(lipgloss.Color("#D3C6AA")).Render("○")
+				taskContent = taskStyle.Render(content)
+				slog.Debug("rendering incomplete task", "id", block.GetID(), "completed", block.IsComplete())
+			}
+
+			// Combine badge and content with task styling
+			content = lipgloss.NewStyle().
+				Background(lipgloss.Color("#2D353B")).
+				Padding(0, 1).
+				Render(statusBadge + " " + taskContent)
+		} else {
+			slog.Debug("rendering note block", "content", content, "is_task", block.IsTask(), "block_type", block.GetTypeString())
+			// Apply note styling
+			content = noteStyle.Render("• " + content)
+		}
+
+		// Render the block with the appropriate style
+		output.WriteString(blockStyle.Render(content))
+		output.WriteString("\n")
 	}
-	
-	// Add a footer with commands
-	output.WriteString("\n")
-	output.WriteString(footerStyle.Render("Commands:"))
-	output.WriteString("\n")
-	output.WriteString(footerStyle.Render("a: Add note   t: Add task   e: Edit   space: Toggle task"))
-	output.WriteString("\n")
-	output.WriteString(footerStyle.Render("j/k: Navigate   q: Quit"))
-	
+
+	// TODO: add help view
+
 	return output.String()
 }
 
@@ -242,24 +296,24 @@ func main() {
 	}
 	defer logger.Close()
 
-	logger.Info("starting Yapper application")
-	
+	slog.Info("starting Yapper application")
+
 	// Check if stdout is a terminal
 	fileInfo, _ := os.Stdout.Stat()
 	if (fileInfo.Mode() & os.ModeCharDevice) == 0 {
-		logger.Error("stdout is not a terminal", "stdout", os.Stdout.Name())
+		slog.Error("stdout is not a terminal", "stdout", os.Stdout.Name())
 		fmt.Println("Error: This application requires a terminal.")
 		os.Exit(1)
 	}
 
 	// Start the Bubble Tea program
-	logger.Info("starting Bubble Tea program")
+	slog.Info("starting Bubble Tea program")
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
-		logger.Error("application error", "error", err)
+		slog.Error("application error", "error", err)
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
-	
-	logger.Info("exiting Yapper application")
+
+	slog.Info("exiting Yapper application")
 }
