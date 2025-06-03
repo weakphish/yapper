@@ -3,23 +3,45 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/weakphish/yapper/model"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Default to everforest
-var style = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#D3C6AA")).
-	Background(lipgloss.Color("#2D353B")).
-	PaddingTop(2).
-	PaddingLeft(4).
-	Width(22)
+// Styles for the UI
+var (
+	headerStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#D3C6AA")).
+		Background(lipgloss.Color("#2D353B")).
+		PaddingLeft(2).
+		Width(60).
+		Align(lipgloss.Center)
+
+	normalBlockStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#D3C6AA")).
+		PaddingLeft(2)
+
+	selectedBlockStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color("#4D5A63")).
+		PaddingLeft(2)
+
+	taskStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#A7C080"))
+
+	completedTaskStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#575F66")).
+		Strikethrough(true)
+
+	footerStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#A7C080")).
+		PaddingTop(1)
+)
 
 // Model is the main application model for the BubbleTea app
 type Model struct {
@@ -61,16 +83,59 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Add a new block
 		case "a":
 			m.textArea.Focus()
+		// Add a new task block
+		case "t":
+			m.textArea.SetValue("- [ ] ")
+			m.textArea.Focus()
 		// If in textArea, save input to block
 		case "esc":
 			if m.textArea.Focused() {
 				m.textArea.Blur()
-				// TODO: Get content of text area and store in a block
-				newBlock := model.NewBlock(m.textArea.Value())
+				// Create a new block from the text area content
+				content := m.textArea.Value()
+				var newBlock model.Block
+				
+				// Check if the content starts with a task marker
+				if len(content) >= 5 && (content[:5] == "- [ ]" || content[:5] == "- [x]") {
+					newBlock = model.NewTaskBlock(content)
+				} else {
+					newBlock = model.NewBlock(content)
+				}
 				m.blocks = append(m.blocks, newBlock)
 				m.textArea.Reset()
 			}
-			// TODO: edit block by getting block under cursor
+		// Add navigation keys
+		case "j", "down":
+			if uint(len(m.blocks)) > 0 {
+				m.cursor = (m.cursor + 1) % uint(len(m.blocks))
+			}
+		case "k", "up":
+			if uint(len(m.blocks)) > 0 {
+				if m.cursor == 0 {
+					m.cursor = uint(len(m.blocks) - 1)
+				} else {
+					m.cursor--
+				}
+			}
+		case "e":
+			// Edit the current block
+			if len(m.blocks) > 0 && int(m.cursor) < len(m.blocks) {
+				m.textArea.SetValue(m.blocks[m.cursor].GetContent())
+				m.textArea.Focus()
+			}
+		case "space":
+			// Toggle task completion if the current block is a task
+			if len(m.blocks) > 0 && int(m.cursor) < len(m.blocks) {
+				block := &m.blocks[m.cursor]
+				if block.IsTask() {
+					content := block.GetContent()
+					if strings.HasPrefix(content, "- [ ]") {
+						block.SetContent("- [x]" + content[5:])
+					} else if strings.HasPrefix(content, "- [x]") {
+						block.SetContent("- [ ]" + content[5:])
+					}
+				}
+			}
 		}
 
 		return m, cmd
@@ -82,21 +147,60 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	// TODO: view
 	if m.textArea.Focused() {
 		return m.textArea.View()
 	}
 
-	var viewString string
-	for _, block := range m.blocks {
-		viewString += block.GetContent() + "\n"
+	var output strings.Builder
+	
+	// Add a header
+	output.WriteString(headerStyle.Render("Yapper Notes") + "\n\n")
+	
+	if len(m.blocks) == 0 {
+		output.WriteString(normalBlockStyle.Render("No blocks yet. Press 'a' to add a note or 't' to add a task."))
+		output.WriteString("\n\n")
+	} else {
+		for i, block := range m.blocks {
+			// Get content and prepare styles
+			content := block.GetContent()
+			var blockStyle lipgloss.Style
+			
+			// Determine the style based on selection
+			if uint(i) == m.cursor {
+				blockStyle = selectedBlockStyle
+			} else {
+				blockStyle = normalBlockStyle
+			}
+			
+			// Format tasks with appropriate styling
+			if block.IsTask() {
+				if !strings.HasPrefix(content, "- [") {
+					content = "- [ ] " + content
+				}
+				
+				// Apply completed task styling if needed
+				if strings.HasPrefix(content, "- [x]") {
+					content = completedTaskStyle.Render(content)
+				} else {
+					content = taskStyle.Render(content)
+				}
+			}
+			
+			// Render the block with the appropriate style
+			output.WriteString(blockStyle.Render(content))
+			output.WriteString("\n")
+		}
 	}
-	str, err := glamour.Render(viewString, "dark")
-	if err != nil {
-		// FIXME: setup and use slog
-		fmt.Println(err)
-	}
-	return str
+	
+	// Add a footer with commands
+	output.WriteString("\n")
+	output.WriteString(footerStyle.Render("Commands:"))
+	output.WriteString("\n")
+	output.WriteString(footerStyle.Render("a: Add note   t: Add task   e: Edit   space: Toggle task"))
+	output.WriteString("\n")
+	output.WriteString(footerStyle.Render("j/k: Navigate   q: Quit"))
+	
+	return output.String()
 }
 
 func main() {
