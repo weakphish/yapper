@@ -24,7 +24,7 @@ func runTaskMode(mdFiles []string) {
 	// Read each file into memory, one file per slice
 	fileStrings := make([]string, 0, len(mdFiles))
 	for _, file := range files {
-		content, err := os.ReadFile(file)     // the file is inside the local directory
+		content, err := os.ReadFile(file) // the file is inside the local directory
 		if err != nil {
 			slog.Error("Error reading file", "file", file, "error", err)
 			continue
@@ -45,6 +45,35 @@ func runTaskMode(mdFiles []string) {
 	}
 }
 
+func runTodayMode() {
+	slog.Info("Running in today mode")
+	// get $EDITOR
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		slog.Error("No editor set in environment variable EDITOR")
+		return
+	}
+	slog.Debug("Using editor", "editor", editor)
+	// Open today's file in the editor
+	today := time.Now()
+	todayFile := path.Join(fileDir, today.Format("2006-01-02")+".md")
+	cmd := exec.Command(editor, todayFile)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Start()
+	if err != nil {
+		slog.Error("Error starting %s: %s", editor, err)
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		slog.Error("Error waiting for command to finish", "error", err)
+	} else {
+		slog.Info("Opened today's file in editor", "file", todayFile)
+	}
+}
 func main() {
 	// Set up logging with slog
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
@@ -71,32 +100,6 @@ func main() {
 		runTaskMode(mdFiles)
 	case "today":
 		slog.Info("Running in today mode")
-		// get $EDITOR
-		editor := os.Getenv("EDITOR")
-		if editor == "" {
-			slog.Error("No editor set in environment variable EDITOR")
-			return
-		}
-		slog.Debug("Using editor", "editor", editor)
-		// Open today's file in the editor
-		today := time.Now()
-		todayFile := path.Join(fileDir, today.Format("2006-01-02")+".md")
-		cmd := exec.Command(editor, todayFile)
-		cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err = cmd.Start()
-	if err != nil {
-		 slog.Error("Error starting %s: %s", editor, err)
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		slog.Error("Error waiting for command to finish", "error", err)
-	} else {
-		slog.Info("Opened today's file in editor", "file", todayFile)
-	}
-
+		runTodayMode()
 	}
 }
