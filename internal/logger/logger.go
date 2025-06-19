@@ -15,7 +15,7 @@ var (
 
 // Init initializes the logger with a file destination
 func Init() error {
-	// Create log directory if it doesn't exist
+	// Create log diretory if it doesn't exist
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get user home directory: %w", err)
