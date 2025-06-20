@@ -16,8 +16,8 @@ type Task struct {
 	Description string
 	Status      TaskStatus
 	CreatedAt   time.Time
-	StartedAt   time.Time
-	CompletedAt time.Time
+	StartedAt   *time.Time // pointer to allow nullability in gorm
+	CompletedAt *time.Time
 	DependsOn   *Task
 	Dependents  []*Task
 }
