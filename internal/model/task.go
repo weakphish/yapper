@@ -11,7 +11,7 @@ const (
 )
 
 type Task struct {
-	ID          string
+	ID          int
 	Title       string
 	Description string
 	Status      TaskStatus
@@ -22,7 +22,7 @@ type Task struct {
 	Dependents  []*Task
 }
 
-func NewTask(id, title, description string) *Task {
+func NewTask(id int, title, description string) *Task {
 	return &Task{
 		ID:          id,
 		Title:       title,
