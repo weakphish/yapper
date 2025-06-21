@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/weakphish/yapper/internal/render"
 	"golang.org/x/exp/slog"
 )
 
@@ -24,10 +25,9 @@ func AddTaskCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	description := args[0]
-	slog.Info("Adding new task", "description", description)
+	title := args[0]
+	slog.Info("Adding new task", "title", title)
 
-	// Here you would typically create a new task in your data store
-	// For now, we just log the action
-	slog.Debug("Task added successfully", "description", description)
+	t := render.TaskForm(title)
+	slog.Info("Task created", "task", t)
 }
