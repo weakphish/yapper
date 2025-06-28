@@ -5,6 +5,8 @@ import (
 	"github.com/weakphish/yapper/internal/model"
 )
 
+// AddTaskForm creates a form for adding a new task. It takes in a list of all tasks in the
+// database to populate the "Depends On" dropdown.
 func AddTaskForm(title string, allTasks []model.Task) model.Task {
 	var (
 		description string
