@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-  logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-    AddSource: true,
-  })) // TODO: configure logger with options and to file
-  slog.SetDefault(logger)
-
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	})) // TODO: configure logger with options and to file
+	slog.SetDefault(logger)
 
 	config.InitConfig()
 	cmd.Execute()

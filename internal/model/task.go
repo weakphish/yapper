@@ -19,7 +19,7 @@ type Task struct {
 	StartedAt   *time.Time // pointer to allow nullability in gorm
 	CompletedAt *time.Time
 	DependsOn   *Task
-	Dependents  []*Task
+	DependsOnID int
 }
 
 func NewTask(id int, title, description string) *Task {
