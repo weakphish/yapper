@@ -15,7 +15,7 @@ func InitDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("error initializing database: %w", err)
 	}
 
-	db.AutoMigrate(&model.Task{})
+	db.AutoMigrate(&model.Task{}, &model.Note{})
 
 	return db, nil
 }
