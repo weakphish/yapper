@@ -2,5 +2,20 @@
 /target/*
 /yap-core/target/*
 
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+!**/packages/build/
+*.nupkg
+*.snupkg
+.vs/
+.vscode/
+
 # IDE
 .idea
