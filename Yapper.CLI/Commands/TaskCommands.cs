@@ -11,9 +11,9 @@ public class AddTaskCommand : AsyncCommand<AddTaskCommand.Settings>
 {
     public class Settings : CommandSettings
     {
-        [CommandArgument(0, "<TITLE>")]
+        [CommandArgument(0, "[TITLE]")]
         [Description("The title of the task")]
-        public string Title { get; set; } = string.Empty;
+        public string? Title { get; set; }
 
         [CommandOption("-d|--description")]
         [Description("The description of the task")]
@@ -24,29 +24,53 @@ public class AddTaskCommand : AsyncCommand<AddTaskCommand.Settings>
         public int? DependsOnId { get; set; }
     }
 
-    public override async System.Threading.Tasks.Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         try
         {
             using var db = new YapperContext();
             db.Database.EnsureCreated();
 
+            // If no title provided, show interactive form
+            string title = settings.Title ?? AnsiConsole.Ask<string>("What's the [green]title[/] of your task?");
+            
+            string description = settings.Description ?? AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter a [yellow]description[/] (optional):")
+                    .AllowEmpty()
+                    .DefaultValue(string.Empty));
+
+            int? dependsOnId = settings.DependsOnId;
+            if (!dependsOnId.HasValue && AnsiConsole.Confirm("Does this task depend on another task?"))
+            {
+                var tasks = await db.Tasks.ToListAsync();
+                if (tasks.Any())
+                {
+                    var taskChoices = tasks.Select(t => $"{t.Id}: {t.Title}").ToArray();
+                    var selectedTask = AnsiConsole.Prompt(
+                        new SelectionPrompt<string>()
+                            .Title("Which task does this depend on?")
+                            .AddChoices(taskChoices));
+                    
+                    dependsOnId = int.Parse(selectedTask.Split(':')[0]);
+                }
+            }
+
             // Find dependency if specified
             Yapper.CLI.Models.Task? dependsOn = null;
-            if (settings.DependsOnId.HasValue)
+            if (dependsOnId.HasValue)
             {
-                dependsOn = await db.Tasks.FindAsync(settings.DependsOnId.Value);
+                dependsOn = await db.Tasks.FindAsync(dependsOnId.Value);
                 if (dependsOn == null)
                 {
-                    AnsiConsole.MarkupLine($"[red]Task with ID {settings.DependsOnId.Value} not found[/]");
+                    AnsiConsole.MarkupLine($"[red]Task with ID {dependsOnId.Value} not found[/]");
                     return 1;
                 }
             }
 
             var task = new Yapper.CLI.Models.Task
             {
-                Title = settings.Title,
-                Description = settings.Description ?? string.Empty,
+                Title = title,
+                Description = description,
                 Status = TaskStatus.Todo,
                 CreatedAt = DateTime.UtcNow,
                 DependsOn = dependsOn,

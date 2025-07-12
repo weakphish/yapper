@@ -15,16 +15,23 @@ class Program
             {
                 config.SetApplicationName("yapper");
                 config.SetApplicationVersion("1.0.0");
-                
+
                 config.AddBranch("task", task =>
                 {
                     task.SetDescription("Manage tasks");
                     task.AddCommand<AddTaskCommand>("add")
                         .WithDescription("Add a new task");
-                    
+
                     task.AddCommand<ListTasksCommand>("list")
                         .WithDescription("List all tasks")
                         .WithAlias("ls");
+                });
+
+                config.AddBranch("note", note =>
+                {
+                    note.SetDescription("Manage notes");
+                    note.AddCommand<AddNoteCommand>("add")
+                    .WithDescription("Add new note");
                 });
             });
             

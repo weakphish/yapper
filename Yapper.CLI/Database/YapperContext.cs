@@ -5,6 +5,7 @@ namespace Yapper.CLI.Database;
 public class YapperContext : DbContext
 {
     public DbSet<Models.Task> Tasks { get; set; }
+    public DbSet<Models.Note> Notes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -27,6 +28,14 @@ public class YapperContext : DbContext
                 .WithMany(t => t.Dependents)
                 .HasForeignKey(t => t.DependsOnId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Models.Note>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+            entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+            entity.Property(n => n.Content).HasMaxLength(1000);
+            entity.Property(n => n.CreatedAt).IsRequired();
         });
     }
 }
