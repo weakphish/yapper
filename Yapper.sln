@@ -1,22 +1,24 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yapper.CLI", "Yapper.CLI\Yapper.CLI.csproj", "{A7C43AE7-7E4B-4ADB-9039-E73EDF128077}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yapper.CLI", "Yapper.CLI\Yapper.CLI.csproj", "{6A6F5D99-B246-4D0F-AE85-B09CAB1594A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6A6F5D99-B246-4D0F-AE85-B09CAB1594A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A6F5D99-B246-4D0F-AE85-B09CAB1594A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A6F5D99-B246-4D0F-AE85-B09CAB1594A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A6F5D99-B246-4D0F-AE85-B09CAB1594A0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A7C43AE7-7E4B-4ADB-9039-E73EDF128077}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7C43AE7-7E4B-4ADB-9039-E73EDF128077}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A7C43AE7-7E4B-4ADB-9039-E73EDF128077}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A7C43AE7-7E4B-4ADB-9039-E73EDF128077}.Release|Any CPU.Build.0 = Release|Any CPU
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {09F55D04-10E4-485C-AC25-94CF27A00BA8}
 	EndGlobalSection
 EndGlobal
