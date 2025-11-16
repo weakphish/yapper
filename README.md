@@ -22,9 +22,11 @@
 NOTE_VAULT_PATH=/path/to/vault cargo run -p note-daemon
 ```
 
+You can also pass flags directly: `note-daemon --vault /path/to/vault --log-level debug`. Log level defaults to `info` and can be overridden with the `NOTE_DAEMON_LOG` env var or `--log-level` (`error`, `warn`, `info`, `debug`).
+
 The daemon watches stdin for JSON-RPC 2.0 requests and writes responses to stdout. Suggested flow for development:
 
-1. Set `NOTE_VAULT_PATH` to a test Markdown vault (contains daily notes with `## Tasks` and `## Log`).
+1. Set `NOTE_VAULT_PATH` to a test Markdown vault (contains daily notes with `## Tasks` and `## Log`). CLI flags override the env var when provided.
 2. Run `cargo run -p note-daemon`.
 3. Send JSON-RPC requests (e.g. via `nvim` plugin, `jq`, or ad-hoc scripts).
 

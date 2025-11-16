@@ -1,5 +1,11 @@
 # Progress Log
 
+## 2025-??
+- Hardened the JSON-RPC server with structured error codes, graceful handling of invalid requests/notifications, and defensive conversions from domain errors.
+- Added a simple stderr logger (levels via `NOTE_DAEMON_LOG` or `--log-level`) plus CLI/ENV configuration for the vault path to avoid hardcoding `NOTE_VAULT_PATH`.
+- Responded with consistent JSON-RPC error bodies for parse/invalid-params/method-not-found cases and emit warnings when notifications fail.
+- Documented the new flags in `README.md` and added unit tests for config parsing and parameter validation.
+
 ## 2024-??
 - Converted repo into a Cargo workspace with `note-core` (library) and `note-daemon` (JSON-RPC server) crates.
 - Implemented core data models, vault abstraction, Markdown parser for Tasks/Log sections, in-memory index, and domain layer plumbing.
