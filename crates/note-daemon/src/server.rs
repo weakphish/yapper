@@ -3,8 +3,6 @@ use std::io::{self, BufRead, Write};
 use anyhow::Result;
 use note_core::{Domain, FileSystemVault, InMemoryIndexStore, IndexStore, NoteId, TaskFilter, TaskId};
 use serde_json::{Value, json};
-
-use crate::logging::{LogLevel, Logger};
 use crate::rpc::{
     ListTasksParams, NoteParams, OpenDailyParams, RangeParams, RpcError, RpcRequest, RpcResponse,
     RpcResult, TagParams, TaskDetailParams, WriteNoteParams, parse_date, parse_params, parse_range,
@@ -13,7 +11,7 @@ use crate::rpc::{
 
 pub(crate) type AppDomain = Domain<FileSystemVault, InMemoryIndexStore>;
 
-pub(crate) fn run_server(domain: &mut AppDomain, logger: &Logger) -> Result<()> {
+pub(crate) fn run_server(domain: &mut AppDomain) -> Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -21,7 +19,7 @@ pub(crate) fn run_server(domain: &mut AppDomain, logger: &Logger) -> Result<()> 
         let raw_line = match raw_line {
             Ok(line) => line,
             Err(err) => {
-                logger.log(LogLevel::Error, format_args!("stdin read error: {}", err));
+                log::error!("stdin read error: {}", err);
                 break;
             }
         };
@@ -32,18 +30,15 @@ pub(crate) fn run_server(domain: &mut AppDomain, logger: &Logger) -> Result<()> 
 
         match serde_json::from_str::<RpcRequest>(&raw_line) {
             Ok(request) => {
-                if let Some(response) = handle_request(domain, request, logger) {
+                if let Some(response) = handle_request(domain, request) {
                     let serialized = serde_json::to_string(&response)?;
                     writeln!(stdout, "{}", serialized)?;
                     stdout.flush()?;
-                    logger.log(
-                        LogLevel::Debug,
-                        format_args!("responded with {}", serialized),
-                    );
+                    log::debug!("responded with {}", serialized);
                 }
             }
             Err(err) => {
-                logger.log(LogLevel::Warn, format_args!("malformed JSON: {}", err));
+                log::warn!("malformed JSON: {}", err);
                 let response =
                     RpcResponse::error(Value::Null, RpcError::parse_error(err.to_string()));
                 let serialized = serde_json::to_string(&response)?;
@@ -53,14 +48,13 @@ pub(crate) fn run_server(domain: &mut AppDomain, logger: &Logger) -> Result<()> 
         }
     }
 
-    logger.log(LogLevel::Info, format_args!("stdin closed, shutting down"));
+    log::info!("stdin closed, shutting down");
     Ok(())
 }
 
 fn handle_request(
     domain: &mut AppDomain,
     request: RpcRequest,
-    logger: &Logger,
 ) -> Option<RpcResponse> {
     let RpcRequest {
         jsonrpc,
@@ -83,10 +77,7 @@ fn handle_request(
             if let Some(id) = id {
                 Some(RpcResponse::error(id, err))
             } else {
-                logger.log(
-                    LogLevel::Warn,
-                    format_args!("notification for method '{}' failed: {}", method, err),
-                );
+                log::warn!("notification for method '{}' failed: {}", method, err);
                 None
             }
         }

@@ -1,6 +1,8 @@
 use std::fmt;
 
+use anyhow::Result;
 use chrono::Local;
+use log::{LevelFilter, Log, Metadata, Record};
 
 /// Severity levels for the daemon's stderr logging.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -21,43 +23,62 @@ impl LogLevel {
             _ => None,
         }
     }
+}
 
-    fn as_str(self) -> &'static str {
-        match self {
-            LogLevel::Error => "ERROR",
-            LogLevel::Warn => "WARN",
-            LogLevel::Info => "INFO",
-            LogLevel::Debug => "DEBUG",
+impl From<LogLevel> for LevelFilter {
+    fn from(value: LogLevel) -> Self {
+        match value {
+            LogLevel::Error => LevelFilter::Error,
+            LogLevel::Warn => LevelFilter::Warn,
+            LogLevel::Info => LevelFilter::Info,
+            LogLevel::Debug => LevelFilter::Debug,
         }
     }
 }
 
 impl fmt::Display for LogLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        match self {
+            LogLevel::Error => f.write_str("ERROR"),
+            LogLevel::Warn => f.write_str("WARN"),
+            LogLevel::Info => f.write_str("INFO"),
+            LogLevel::Debug => f.write_str("DEBUG"),
+        }
     }
 }
 
-/// Minimal stderr logger that avoids extra dependencies.
-#[derive(Clone, Debug)]
-pub(crate) struct Logger {
-    level: LogLevel,
+/// Initialize the global logger that bridges to the `log` crate.
+pub(crate) fn init_logger(level: LogLevel) -> Result<()> {
+    let level_filter = LevelFilter::from(level);
+    log::set_boxed_logger(Box::new(StderrLogger::new(level_filter)))?;
+    log::set_max_level(level_filter);
+    Ok(())
 }
 
-impl Logger {
-    pub(crate) fn new(level: LogLevel) -> Self {
-        Logger { level }
+#[derive(Debug)]
+struct StderrLogger {
+    level: LevelFilter,
+}
+
+impl StderrLogger {
+    fn new(level: LevelFilter) -> Self {
+        Self { level }
+    }
+}
+
+impl Log for StderrLogger {
+    fn enabled(&self, metadata: &Metadata<'_>) -> bool {
+        metadata.level().to_level_filter() <= self.level
     }
 
-    fn enabled(&self, level: LogLevel) -> bool {
-        level <= self.level
-    }
-
-    pub(crate) fn log(&self, level: LogLevel, args: fmt::Arguments<'_>) {
-        if !self.enabled(level) {
+    fn log(&self, record: &Record<'_>) {
+        if !self.enabled(record.metadata()) {
             return;
         }
+
         let timestamp = Local::now().format("%Y-%m-%dT%H:%M:%S");
-        eprintln!("[{}][{}] {}", timestamp, level, args);
+        eprintln!("[{}][{}] {}", timestamp, record.level(), record.args());
     }
+
+    fn flush(&self) {}
 }
