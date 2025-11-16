@@ -2,13 +2,13 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use log::LevelFilter;
+use log::Level;
 
 /// Runtime configuration derived from env vars and CLI flags.
 #[derive(Clone, Debug)]
 pub(crate) struct DaemonConfig {
     pub(crate) vault_path: PathBuf,
-    pub(crate) log_level: LevelFilter,
+    pub(crate) log_level: Level,
 }
 
 impl DaemonConfig {
@@ -34,7 +34,7 @@ impl DaemonConfig {
         let mut log_level = log_env
             .as_deref()
             .and_then(|value| value.parse().ok())
-            .unwrap_or(LevelFilter::Info);
+            .unwrap_or(Level::Info);
 
         // Drop the program name if present.
         let _ = args.next();
@@ -98,7 +98,7 @@ mod tests {
                 .expect("config should parse");
 
         assert_eq!(config.vault_path, PathBuf::from("/cli/vault"));
-        assert_eq!(config.log_level, LevelFilter::Warn);
+        assert_eq!(config.log_level, Level::Warn);
     }
 
     /// Verifies defaults apply when neither env vars nor CLI flags override them.
@@ -108,6 +108,6 @@ mod tests {
         let config = DaemonConfig::from_iterator(None, None, args).expect("defaults should parse");
 
         assert_eq!(config.vault_path, PathBuf::from("."));
-        assert_eq!(config.log_level, LevelFilter::Info);
+        assert_eq!(config.log_level, Level::Info);
 }
 }
