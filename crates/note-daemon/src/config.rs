@@ -1,15 +1,14 @@
 use std::env;
 use std::path::PathBuf;
 
-use anyhow::{Result, anyhow};
-
-use crate::logging::LogLevel;
+use anyhow::{anyhow, Result};
+use log::LevelFilter;
 
 /// Runtime configuration derived from env vars and CLI flags.
 #[derive(Clone, Debug)]
 pub(crate) struct DaemonConfig {
     pub(crate) vault_path: PathBuf,
-    pub(crate) log_level: LogLevel,
+    pub(crate) log_level: LevelFilter,
 }
 
 impl DaemonConfig {
@@ -34,8 +33,8 @@ impl DaemonConfig {
         let mut vault_path = vault_env.unwrap_or_else(|| ".".to_string());
         let mut log_level = log_env
             .as_deref()
-            .and_then(LogLevel::parse)
-            .unwrap_or(LogLevel::Info);
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(LevelFilter::Info);
 
         // Drop the program name if present.
         let _ = args.next();
@@ -52,8 +51,9 @@ impl DaemonConfig {
                     let value = args
                         .next()
                         .ok_or_else(|| anyhow!("--log-level expects a value"))?;
-                    log_level = LogLevel::parse(&value)
-                        .ok_or_else(|| anyhow!("invalid log level '{}'", value))?;
+                    log_level = value
+                        .parse()
+                        .map_err(|_| anyhow!("invalid log level '{}'", value))?;
                 }
                 other => {
                     return Err(anyhow!(
@@ -98,7 +98,7 @@ mod tests {
                 .expect("config should parse");
 
         assert_eq!(config.vault_path, PathBuf::from("/cli/vault"));
-        assert_eq!(config.log_level, LogLevel::Warn);
+        assert_eq!(config.log_level, LevelFilter::Warn);
     }
 
     /// Verifies defaults apply when neither env vars nor CLI flags override them.
@@ -108,6 +108,6 @@ mod tests {
         let config = DaemonConfig::from_iterator(None, None, args).expect("defaults should parse");
 
         assert_eq!(config.vault_path, PathBuf::from("."));
-        assert_eq!(config.log_level, LogLevel::Info);
-    }
+        assert_eq!(config.log_level, LevelFilter::Info);
+}
 }
