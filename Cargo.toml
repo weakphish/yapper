@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/note-core",
+    "crates/note-daemon",
+]
+resolver = "2"
