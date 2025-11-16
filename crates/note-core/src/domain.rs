@@ -13,6 +13,7 @@ use crate::model::{
 use crate::parser::NoteParser;
 use crate::vault::Vault;
 
+/// Coordinates vault IO, parsing, and index updates for the rest of the app.
 pub struct VaultIndexManager<V: Vault, I: IndexStore> {
     pub vault: V,
     pub index: I,
@@ -20,6 +21,7 @@ pub struct VaultIndexManager<V: Vault, I: IndexStore> {
 }
 
 impl<V: Vault, I: IndexStore> VaultIndexManager<V, I> {
+    /// Builds a manager around a vault, index backend, and parser strategy.
     pub fn new(vault: V, index: I, parser: Box<dyn NoteParser>) -> Self {
         Self {
             vault,
@@ -28,6 +30,7 @@ impl<V: Vault, I: IndexStore> VaultIndexManager<V, I> {
         }
     }
 
+    /// Reindexes the entire vault (used at startup or explicit refresh).
     pub fn full_reindex(&mut self) -> Result<()> {
         let paths = self.vault.list_note_paths()?;
         for path in paths {
@@ -38,6 +41,7 @@ impl<V: Vault, I: IndexStore> VaultIndexManager<V, I> {
         Ok(())
     }
 
+    /// Reindexes a single note path, typically after it is edited.
     pub fn reindex_note_path(&mut self, path: &Path) -> Result<()> {
         let note = self.vault.read_note(path)?;
         let parsed = self.parser.parse(note);
@@ -45,45 +49,55 @@ impl<V: Vault, I: IndexStore> VaultIndexManager<V, I> {
     }
 }
 
+/// High-level domain façade exposing productive queries and actions.
 pub struct Domain<V: Vault, I: IndexStore> {
     pub index_mgr: VaultIndexManager<V, I>,
 }
 
 impl<V: Vault, I: IndexStore> Domain<V, I> {
+    /// Wraps the index manager and prepares the domain entry point.
     pub fn new(index_mgr: VaultIndexManager<V, I>) -> Self {
         Domain { index_mgr }
     }
 
+    /// Forces a full vault reindex.
     pub fn reindex_all(&mut self) -> Result<()> {
         self.index_mgr.full_reindex()
     }
 
+    /// Lists tasks filtered by the provided criteria.
     pub fn list_tasks(&self, filter: &TaskFilter) -> Vec<Task> {
         self.index_mgr.index.list_tasks(filter)
     }
 
+    /// Fetches a task alongside any mentions/backlinks referencing it.
     pub fn task_detail(&self, id: &TaskId) -> Option<(Task, Vec<TaskMention>)> {
         let task = self.index_mgr.index.get_task(id)?;
         let mentions = self.index_mgr.index.get_mentions_for_task(id);
         Some((task, mentions))
     }
 
+    /// Provides all tasks/log entries tagged with the supplied tag name.
     pub fn items_for_tag(&self, tag: &str) -> TagResult {
         self.index_mgr.index.items_for_tag(tag)
     }
 
+    /// Lists note metadata for dates within the provided range.
     pub fn notes_in_range(&self, range: &DateRange) -> Vec<NoteMeta> {
         self.index_mgr.index.list_notes_by_date(range)
     }
 
+    /// Returns the global tag listing (across tasks and log entries).
     pub fn list_tags(&self) -> Vec<String> {
         self.index_mgr.index.list_tags()
     }
 
+    /// Loads a note's full contents if present in the index cache.
     pub fn read_note(&self, id: &NoteId) -> Option<Note> {
         self.index_mgr.index.get_note(id)
     }
 
+    /// Persists a note's content and reindexes it to keep the model in sync.
     pub fn write_note(&mut self, id: &NoteId, content: &str) -> Result<Note> {
         let note = self
             .index_mgr
@@ -98,6 +112,7 @@ impl<V: Vault, I: IndexStore> Domain<V, I> {
             .ok_or_else(|| anyhow!("note {} unavailable after write", id.0))
     }
 
+    /// Opens or creates the daily note for the given date.
     pub fn open_daily(&mut self, date: NaiveDate) -> Result<Note> {
         let range = DateRange {
             start: date,
@@ -134,6 +149,7 @@ impl<V: Vault, I: IndexStore> Domain<V, I> {
             .ok_or_else(|| anyhow!("note {} unavailable after creation", id.0))
     }
 
+    /// Produces a summary of activity for a weekly review view.
     pub fn weekly_summary(&self, range: &DateRange) -> WeeklySummary {
         let all_tasks = self.index_mgr.index.list_tasks(&TaskFilter::default());
         let new_tasks: Vec<_> = all_tasks

@@ -7,20 +7,25 @@ use regex::{Captures, Regex};
 
 use crate::model::{LogEntry, LogEntryId, Note, ParsedNote, Task, TaskId, TaskMention, TaskStatus};
 
+/// Trait describing the ability to parse a note into structured entities.
 pub trait NoteParser: Send + Sync {
+    /// Parses a note's Markdown content into tasks, log entries, and mentions.
     fn parse(&self, note: Note) -> ParsedNote;
 }
 
+/// Minimal Markdown parser that understands `## Tasks` / `## Log` conventions.
 #[derive(Default)]
 pub struct MarkdownParser;
 
 impl MarkdownParser {
+    /// Creates a parser instance (the type is stateless, so `Default` is enough).
     pub fn new() -> Self {
         Self
     }
 }
 
 impl NoteParser for MarkdownParser {
+    /// Runs the internal parser over the provided note value.
     fn parse(&self, note: Note) -> ParsedNote {
         parse_note_internal(note)
     }
@@ -39,6 +44,7 @@ static TIME_PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
 static LOG_TASK_REF_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"\[(T-[0-9A-Za-z_-]+)\]"#).expect("valid task reference regex"));
 
+/// Sections recognized inside a note so the parser can decide what to extract.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum Section {
     Tasks,
@@ -46,6 +52,7 @@ enum Section {
     Other,
 }
 
+/// Walks through a note line-by-line collecting tasks, log entries, and mentions.
 fn parse_note_internal(note: Note) -> ParsedNote {
     let mut tasks = Vec::new();
     let mut log_entries = Vec::new();
@@ -100,6 +107,7 @@ fn parse_note_internal(note: Note) -> ParsedNote {
     }
 }
 
+/// Constructs a `Task` based on the regex capture groups and continuation text.
 fn build_task_from_caps(
     note: &Note,
     caps: &Captures<'_>,
@@ -135,6 +143,7 @@ fn build_task_from_caps(
     }
 }
 
+/// Parses a potential log line plus its continuation and returns log data + mentions.
 fn parse_log_line(
     note: &Note,
     line: &str,
@@ -188,6 +197,7 @@ fn parse_log_line(
     Some((entry, mentions))
 }
 
+/// Concatenates the base line with any continuation blocks collected below it.
 fn combine_with_continuation(base: &str, continuation: &[String]) -> String {
     let mut combined = base.trim().to_string();
     for extra in continuation {
@@ -201,6 +211,7 @@ fn combine_with_continuation(base: &str, continuation: &[String]) -> String {
 
 type LineIter<'a> = Peekable<std::iter::Enumerate<Lines<'a>>>;
 
+/// Collects indented lines that logically belong to the previous bullet/task.
 fn collect_continuation<'a>(lines: &mut LineIter<'a>) -> Vec<String> {
     let mut extras = Vec::new();
     while let Some((_, next_line)) = lines.peek() {
@@ -219,6 +230,7 @@ fn collect_continuation<'a>(lines: &mut LineIter<'a>) -> Vec<String> {
     extras
 }
 
+/// Splits a mixed string into a cleaned title and trailing `#tags`.
 fn split_title_and_tags(input: &str) -> (String, Vec<String>) {
     let mut title_parts = Vec::new();
     let mut tags = Vec::new();
@@ -240,6 +252,7 @@ fn split_title_and_tags(input: &str) -> (String, Vec<String>) {
     (title, tags)
 }
 
+/// Creates a UI-friendly excerpt, truncating log content when needed.
 fn build_excerpt(content: &str) -> String {
     const MAX_EXCERPT: usize = 120;
     if content.len() <= MAX_EXCERPT {
@@ -257,6 +270,7 @@ mod tests {
     use crate::model::{Note, NoteId};
     use std::path::PathBuf;
 
+    /// Helper to quickly create a note with the provided body for parser tests.
     fn make_note(content: &str) -> Note {
         Note {
             id: NoteId("note-1".into()),
@@ -267,6 +281,7 @@ mod tests {
         }
     }
 
+    /// Ensures tasks/log entries with continuation lines survive parsing intact.
     #[test]
     fn parses_multiline_tasks_and_logs() {
         let parser = MarkdownParser::new();
@@ -318,6 +333,7 @@ mod tests {
         );
     }
 
+    /// Tasks with AM/PM style timestamps should be parsed cleanly.
     #[test]
     fn parses_ampm_timestamps() {
         let parser = MarkdownParser::new();
@@ -330,6 +346,7 @@ mod tests {
         assert_eq!(parsed.log_entries[0].timestamp.as_deref(), Some("10:45pm"));
     }
 
+    /// Headings with leading indentation should still be discovered.
     #[test]
     fn tolerates_indented_headings() {
         let parser = MarkdownParser::new();

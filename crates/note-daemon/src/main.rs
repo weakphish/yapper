@@ -13,6 +13,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+/// Entry point for the stdio JSON-RPC server used by Neovim and other clients.
 fn main() -> Result<()> {
     let vault_root = env::var("NOTE_VAULT_PATH").unwrap_or_else(|_| ".".to_string());
     let vault = FileSystemVault::new(PathBuf::from(vault_root));
@@ -50,6 +51,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Handles a single JSON-RPC request, returning a response when needed.
 fn handle_request(
     domain: &mut Domain<FileSystemVault, InMemoryIndexStore>,
     request: RpcRequest,
@@ -69,6 +71,7 @@ fn handle_request(
     }
 }
 
+/// Dispatches an RPC call to the appropriate domain method.
 fn dispatch(
     domain: &mut Domain<FileSystemVault, InMemoryIndexStore>,
     method: &str,
@@ -148,17 +151,20 @@ fn dispatch(
     }
 }
 
+/// Parses serde values into strongly typed params, defaulting to `{}` when none supplied.
 fn parse_params<T: DeserializeOwned>(params: Option<Value>) -> Result<T> {
     let value = params.unwrap_or_else(|| json!({}));
     Ok(serde_json::from_value(value)?)
 }
 
+/// Parses a `DateRange` from `YYYY-MM-DD` string bounds.
 fn parse_range(start: String, end: String) -> Result<DateRange> {
     let start = NaiveDate::parse_from_str(&start, "%Y-%m-%d")?;
     let end = NaiveDate::parse_from_str(&end, "%Y-%m-%d")?;
     Ok(DateRange { start, end })
 }
 
+/// Basic JSON-RPC request container.
 #[derive(Deserialize)]
 struct RpcRequest {
     pub jsonrpc: Option<String>,
@@ -167,6 +173,7 @@ struct RpcRequest {
     pub params: Option<Value>,
 }
 
+/// Successful or error response emitted by the daemon.
 #[derive(Serialize)]
 struct RpcResponse {
     jsonrpc: &'static str,
@@ -177,6 +184,7 @@ struct RpcResponse {
     error: Option<RpcError>,
 }
 
+/// Error payload for a failed JSON-RPC request.
 #[derive(Serialize)]
 struct RpcError {
     code: i32,
@@ -184,6 +192,7 @@ struct RpcError {
 }
 
 impl RpcResponse {
+    /// Convenience to represent a success response.
     fn result(id: Value, result: Value) -> Self {
         RpcResponse {
             jsonrpc: "2.0",
@@ -193,6 +202,7 @@ impl RpcResponse {
         }
     }
 
+    /// Convenience to represent an error response.
     fn error(id: Value, code: i32, message: String) -> Self {
         RpcResponse {
             jsonrpc: "2.0",
@@ -203,6 +213,7 @@ impl RpcResponse {
     }
 }
 
+/// Parameters accepted by `core.list_tasks`.
 #[derive(Default, Deserialize)]
 #[serde(default)]
 struct ListTasksParams {
@@ -212,32 +223,38 @@ struct ListTasksParams {
     touched_since: Option<String>,
 }
 
+/// Parameters accepted by `core.task_detail`.
 #[derive(Deserialize)]
 struct TaskDetailParams {
     task_id: String,
 }
 
+/// Parameters accepted by `core.items_for_tag`.
 #[derive(Deserialize)]
 struct TagParams {
     tag: String,
 }
 
+/// Date range request parameters used by multiple methods.
 #[derive(Deserialize)]
 struct RangeParams {
     start: String,
     end: String,
 }
 
+/// Parameters for `core.open_daily`.
 #[derive(Deserialize)]
 struct OpenDailyParams {
     date: String,
 }
 
+/// Parameters for `core.read_note`.
 #[derive(Deserialize)]
 struct NoteParams {
     note_id: String,
 }
 
+/// Parameters for `core.write_note`.
 #[derive(Deserialize)]
 struct WriteNoteParams {
     note_id: String,

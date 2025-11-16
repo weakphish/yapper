@@ -7,32 +7,46 @@ use crate::model::{
     TaskFilter, TaskId, TaskMention, VaultIndex,
 };
 
+/// Trait describing a storage backend for parsed vault data.
 pub trait IndexStore {
+    /// Inserts or replaces the parsed representation of a single note.
     fn upsert_parsed_note(&mut self, parsed: ParsedNote) -> Result<()>;
+    /// Removes everything associated with the provided note from the index.
     fn remove_note(&mut self, note_id: &NoteId) -> Result<()>;
 
+    /// Fetches a single task by ID.
     fn get_task(&self, id: &TaskId) -> Option<Task>;
+    /// Lists tasks matching the provided filter criteria.
     fn list_tasks(&self, filter: &TaskFilter) -> Vec<Task>;
+    /// Returns log entries that reference the provided task.
     fn get_log_entries_for_task(&self, id: &TaskId) -> Vec<LogEntry>;
+    /// Returns backlinks discovered for the provided task.
     fn get_mentions_for_task(&self, id: &TaskId) -> Vec<TaskMention>;
 
+    /// Returns `NoteMeta` entries whose dates fall within the range.
     fn list_notes_by_date(&self, range: &DateRange) -> Vec<NoteMeta>;
+    /// Fetches the fully loaded note (including Markdown content).
     fn get_note(&self, id: &NoteId) -> Option<Note>;
 
+    /// Lists every tag present in the index.
     fn list_tags(&self) -> Vec<String>;
+    /// Returns all tasks/log entries tied to a single tag.
     fn items_for_tag(&self, tag: &str) -> TagResult;
 }
 
+/// In-memory `IndexStore` backed by hash maps—useful for now and tests.
 #[derive(Default)]
 pub struct InMemoryIndexStore {
     data: VaultIndex,
 }
 
 impl InMemoryIndexStore {
+    /// Creates a brand-new empty index store.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Cleans tag/mention lookups when a task is removed.
     fn remove_task_internal(&mut self, task_id: &TaskId) {
         if let Some(task) = self.data.tasks.remove(task_id) {
             for tag in task.tags {
@@ -48,6 +62,7 @@ impl InMemoryIndexStore {
         self.data.task_refs_by_task.remove(task_id);
     }
 
+    /// Removes a log entry and clears any tag/task reverse references.
     fn remove_log_entry_internal(&mut self, entry_id: &LogEntryId) {
         if let Some(entry) = self.data.log_entries.remove(entry_id) {
             for tag in entry.tags {
@@ -71,6 +86,7 @@ impl InMemoryIndexStore {
 }
 
 impl IndexStore for InMemoryIndexStore {
+    /// Applies the parsed note to the index, replacing previous data for that note.
     fn upsert_parsed_note(&mut self, parsed: ParsedNote) -> Result<()> {
         let ParsedNote {
             note,
@@ -142,6 +158,7 @@ impl IndexStore for InMemoryIndexStore {
         Ok(())
     }
 
+    /// Removes all trace of the given note and any derived entities.
     fn remove_note(&mut self, note_id: &NoteId) -> Result<()> {
         self.data.notes.remove(note_id);
         self.data.note_content.remove(note_id);
@@ -164,10 +181,12 @@ impl IndexStore for InMemoryIndexStore {
         Ok(())
     }
 
+    /// Returns a cloned task if the ID exists.
     fn get_task(&self, id: &TaskId) -> Option<Task> {
         self.data.tasks.get(id).cloned()
     }
 
+    /// Applies filtering logic for status/tags/search/time slices across tasks.
     fn list_tasks(&self, filter: &TaskFilter) -> Vec<Task> {
         self.data
             .tasks
@@ -211,6 +230,7 @@ impl IndexStore for InMemoryIndexStore {
             .collect()
     }
 
+    /// Retrieves all log entries that reference the provided task.
     fn get_log_entries_for_task(&self, id: &TaskId) -> Vec<LogEntry> {
         self.data
             .task_refs_by_task
@@ -222,6 +242,7 @@ impl IndexStore for InMemoryIndexStore {
             .collect()
     }
 
+    /// Returns backlink mentions for a task if recorded.
     fn get_mentions_for_task(&self, id: &TaskId) -> Vec<TaskMention> {
         self.data
             .mentions_by_task
@@ -230,6 +251,7 @@ impl IndexStore for InMemoryIndexStore {
             .unwrap_or_default()
     }
 
+    /// Lists `NoteMeta` entries ordered by date within the requested range.
     fn list_notes_by_date(&self, range: &DateRange) -> Vec<NoteMeta> {
         let mut notes: Vec<_> = self
             .data
@@ -248,10 +270,12 @@ impl IndexStore for InMemoryIndexStore {
         notes
     }
 
+    /// Returns a note with full content if present in the index.
     fn get_note(&self, id: &NoteId) -> Option<Note> {
         self.data.note_content.get(id).cloned()
     }
 
+    /// Produces a sorted list of all known tags.
     fn list_tags(&self) -> Vec<String> {
         let mut tags: HashSet<String> = HashSet::new();
         tags.extend(self.data.tags_to_tasks.keys().cloned());
@@ -261,6 +285,7 @@ impl IndexStore for InMemoryIndexStore {
         tags
     }
 
+    /// Fetches every task/log entry associated with the provided tag string.
     fn items_for_tag(&self, tag: &str) -> TagResult {
         let tasks = self
             .data
