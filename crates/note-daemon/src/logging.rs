@@ -14,6 +14,7 @@ pub(crate) enum LogLevel {
 }
 
 impl LogLevel {
+    /// Parses a textual log level value into the enum variant.
     pub(crate) fn parse(input: &str) -> Option<Self> {
         match input.to_ascii_lowercase().as_str() {
             "error" => Some(LogLevel::Error),
@@ -26,6 +27,7 @@ impl LogLevel {
 }
 
 impl From<LogLevel> for LevelFilter {
+    /// Converts the custom log level into the `log` crate filter.
     fn from(value: LogLevel) -> Self {
         match value {
             LogLevel::Error => LevelFilter::Error,
@@ -37,6 +39,7 @@ impl From<LogLevel> for LevelFilter {
 }
 
 impl fmt::Display for LogLevel {
+    /// Formats the level in uppercase for log line prefixes.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LogLevel::Error => f.write_str("ERROR"),
@@ -55,22 +58,26 @@ pub(crate) fn init_logger(level: LogLevel) -> Result<()> {
     Ok(())
 }
 
+/// Simple stderr logger that honors a max level filter.
 #[derive(Debug)]
 struct StderrLogger {
     level: LevelFilter,
 }
 
 impl StderrLogger {
+    /// Constructs the logger with the provided filter threshold.
     fn new(level: LevelFilter) -> Self {
         Self { level }
     }
 }
 
 impl Log for StderrLogger {
+    /// Indicates whether a record should be emitted.
     fn enabled(&self, metadata: &Metadata<'_>) -> bool {
         metadata.level().to_level_filter() <= self.level
     }
 
+    /// Writes formatted log records to stderr with a timestamp prefix.
     fn log(&self, record: &Record<'_>) {
         if !self.enabled(record.metadata()) {
             return;
@@ -80,5 +87,6 @@ impl Log for StderrLogger {
         eprintln!("[{}][{}] {}", timestamp, record.level(), record.args());
     }
 
+    /// Flush is a no-op because writes go directly to stderr.
     fn flush(&self) {}
 }

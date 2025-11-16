@@ -14,6 +14,7 @@ use crate::config::DaemonConfig;
 use crate::logging::init_logger;
 use crate::server::{AppDomain, run_server};
 
+/// Entry point for the JSON-RPC daemon binary.
 fn main() -> Result<()> {
     let config = DaemonConfig::from_env_and_args(env::args())?;
     init_logger(config.log_level)?;

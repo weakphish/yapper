@@ -11,6 +11,7 @@ use crate::rpc::{
 
 pub(crate) type AppDomain = Domain<FileSystemVault, InMemoryIndexStore>;
 
+/// Starts the stdin/stdout JSON-RPC loop and processes requests until EOF.
 pub(crate) fn run_server(domain: &mut AppDomain) -> Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -52,6 +53,7 @@ pub(crate) fn run_server(domain: &mut AppDomain) -> Result<()> {
     Ok(())
 }
 
+/// Handles a single JSON-RPC envelope and emits a response when appropriate.
 fn handle_request(
     domain: &mut AppDomain,
     request: RpcRequest,
@@ -84,6 +86,7 @@ fn handle_request(
     }
 }
 
+/// Dispatches the RPC method to the corresponding domain call.
 fn dispatch(domain: &mut AppDomain, method: &str, params: Option<Value>) -> RpcResult<Value> {
     match method {
         "core.reindex" => {

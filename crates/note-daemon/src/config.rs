@@ -13,6 +13,7 @@ pub(crate) struct DaemonConfig {
 }
 
 impl DaemonConfig {
+    /// Builds config from the process environment plus CLI arguments.
     pub(crate) fn from_env_and_args(args: env::Args) -> Result<Self> {
         Self::from_iterator(
             env::var("NOTE_VAULT_PATH").ok(),
@@ -21,6 +22,7 @@ impl DaemonConfig {
         )
     }
 
+    /// Parses configuration sources in priority order (`args` > env vars).
     pub(crate) fn from_iterator<I>(
         vault_env: Option<String>,
         log_env: Option<String>,
@@ -69,6 +71,7 @@ impl DaemonConfig {
         })
     }
 
+    /// Returns the CLI usage string for help/error messages.
     pub(crate) fn usage() -> &'static str {
         "note-daemon [--vault PATH] [--log-level error|warn|info|debug]"
     }
@@ -78,6 +81,7 @@ impl DaemonConfig {
 mod tests {
     use super::*;
 
+    /// Ensures CLI flags override values sourced from env vars.
     #[test]
     fn config_prefers_cli_values() {
         let args = vec![
@@ -97,6 +101,7 @@ mod tests {
         assert_eq!(config.log_level, LogLevel::Warn);
     }
 
+    /// Verifies defaults apply when neither env vars nor CLI flags override them.
     #[test]
     fn config_defaults_when_cli_missing() {
         let args = vec!["note-daemon".to_string()].into_iter();
