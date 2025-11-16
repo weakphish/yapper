@@ -5,7 +5,7 @@
 - Implemented core data models, vault abstraction, Markdown parser for Tasks/Log sections, in-memory index, and domain layer plumbing.
 - Added a blocking stdio JSON-RPC loop that exposes the domain methods defined in `AGENTS.md`.
 - `cargo fmt` applied; `cargo check` currently blocked because the sandbox cannot reach crates.io (network restricted).
-- Introduced a pluggable parser interface (`NoteParser` trait with `MarkdownParser` default) so future backends (tree-sitter, etc.) can be swapped in without touching the domain/index layers.
+- Introduced a pluggable parser interface (`NoteParser` trait with regex-backed default) so future backends (tree-sitter, etc.) can be swapped in without touching the domain/index layers.
 - Parser now supports multiline task/log continuations, am/pm timestamps, indented headings, and includes unit tests covering these cases.
 - Added a scratch Neovim module (`nvim/lua/note_rpc`) that spawns the daemon, exposes `:NoteListTasks` and `:NoteOpenDaily`, and renders simple floating buffers for manual testing (stdout/stderr buffering fixed, empty JSON params handled, tolerant of serde struct wrappers coming back from JSON).
 
