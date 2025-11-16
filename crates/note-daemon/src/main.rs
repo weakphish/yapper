@@ -6,8 +6,8 @@ use anyhow::{Result, anyhow};
 use chrono::NaiveDate;
 use note_core::IndexStore;
 use note_core::{
-    DateRange, Domain, FileSystemVault, InMemoryIndexStore, MarkdownParser, NoteId, TaskFilter,
-    TaskId, TaskStatus, VaultIndexManager,
+    DateRange, Domain, FileSystemVault, InMemoryIndexStore, NoteId, RegexMarkdownParser,
+    TaskFilter, TaskId, TaskStatus, VaultIndexManager,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     let vault_root = env::var("NOTE_VAULT_PATH").unwrap_or_else(|_| ".".to_string());
     let vault = FileSystemVault::new(PathBuf::from(vault_root));
     let index = InMemoryIndexStore::new();
-    let parser = Box::new(MarkdownParser::new());
+    let parser = Box::new(RegexMarkdownParser::new());
     let index_mgr = VaultIndexManager::new(vault, index, parser);
     let mut domain = Domain::new(index_mgr);
     let _ = domain.reindex_all();
