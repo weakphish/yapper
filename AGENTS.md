@@ -25,20 +25,24 @@ The core is an editor-agnostic engine that:
 
 ## 2. Current Progress (Implementation Status)
 
-No code has been implemented yet. What follows is the accurate status for new agents starting fresh:
+Phase 1 scaffolding is in place. The repository now has a Go module, basic
+project layout, placeholder daemon entrypoint, and the initial data models. All
+subsequent phases still need to be implemented.
 
-### 🚫 No Implemented Components Yet
+### ✅ Phase 1 – Core Scaffolding
 
-The project currently exists only as a **specification**. No Go code, parser, index, JSON-RPC server, or supporting modules have been written.
+* `go.mod` initialized (module `github.com/weakphish/yapper` targeting Go 1.24).
+* Directory layout created (`cmd/note-daemon`, `internal/*` packages).
+* Minimal daemon entrypoint at `cmd/note-daemon/main.go` that will later host the JSON-RPC server.
+* Core data models (`Note`, `Task`, `LogEntry`, `TaskMention`, etc.) defined in `internal/model`.
 
 ### 🧭 Ready for Implementation
 
-The following components have complete design specifications and are ready for implementation:
+The following components remain to be implemented next (Phase 2 onward):
 
 * **Vault layer** (filesystem scanning + note loading)
 * **NoteParser interface** (pluggable markdown parsing strategy)
 * **Regex-based Markdown parser (v1)**
-* **Data models** for Notes, Tasks, LogEntries, Mentions
 * **IndexStore interface** (in-memory first)
 * **VaultIndexManager** (vault + parse + index coordination)
 * **Domain/query layer** (high-level operations)
@@ -249,4 +253,3 @@ This section is for **agents picking up the project with no prior memory**. Foll
     * Optional TUI using the same JSON-RPC or directly linking the Go packages.
 
 Agents should consult this roadmap, pick the **next unfinished step**, and implement it according to the design above, updating this spec if the design evolves.
-
