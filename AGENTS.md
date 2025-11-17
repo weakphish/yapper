@@ -36,15 +36,23 @@ subsequent phases still need to be implemented.
 * Minimal daemon entrypoint at `cmd/note-daemon/main.go` that will later host the JSON-RPC server.
 * Core data models (`Note`, `Task`, `LogEntry`, `TaskMention`, etc.) defined in `internal/model`.
 
+### ✅ Phase 2 – Vault + Parser Foundations
+
+* Filesystem vault layer implemented (`internal/vault`) with path normalization + helper utilities.
+* `NoteParser` interface and `ParsedNote` struct defined in `internal/parser` so downstream layers can work against a stable contract.
+* (Still TODO) Regex-based parser implementation that satisfies the interface.
+
+### ✅ Phase 3 – Index & Coordination Foundations
+
+* `IndexStore` interface plus `InMemoryIndexStore` implementation created in `internal/index`.
+* `VaultIndexManager` wires the vault, parser, and index for full and single-note reindexing.
+* Unit tests cover the in-memory index behavior and manager orchestration.
+
 ### 🧭 Ready for Implementation
 
 The following components remain to be implemented next (Phase 2 onward):
 
-* **Vault layer** (filesystem scanning + note loading)
-* **NoteParser interface** (pluggable markdown parsing strategy)
 * **Regex-based Markdown parser (v1)**
-* **IndexStore interface** (in-memory first)
-* **VaultIndexManager** (vault + parse + index coordination)
 * **Domain/query layer** (high-level operations)
 * **JSON-RPC server** (exposing domain methods)
 
@@ -108,7 +116,16 @@ Core implements JSON-RPC methods such as:
 * Block-level editing operations.
 * More advanced task workflow metadata.
 
-## 9. Implementation Roadmap for Agents
+## 9. Development Process
+
+1. Review `AGENTS.md` to determine the next unfinished roadmap item.
+2. Implement the described functionality, keeping Markdown files as the source
+   of truth.
+3. Prefer small, well-tested packages inside `internal/` to keep the public API
+   limited to the daemon binary.
+4. Update documentation and tests as you progress through the phases.
+
+## 10. Implementation Roadmap for Agents
 
 This section is for **agents picking up the project with no prior memory**. Follow these steps in order unless explicitly instructed otherwise.
 
@@ -139,12 +156,12 @@ This section is for **agents picking up the project with no prior memory**. Foll
 
 ### Phase 2 – Vault + Parser (Regex v1)
 
-3. **Implement Vault interface** (in `internal/vault`)
+3. **Implement Vault interface** (in `internal/vault`) ✅
 
    * Interface to list note paths and load note contents from a root directory.
    * Implement `FileSystemVault` with a configurable root path.
 
-4. **Define NoteParser interface** (in `internal/parser`)
+4. **Define NoteParser interface** (in `internal/parser`) ✅
 
    * Interface method: `Parse(note Note) (ParsedNote, error)`.
    * `ParsedNote` includes `Note`, `[]Task`, `[]LogEntry`, `[]TaskMention`.
@@ -159,7 +176,7 @@ This section is for **agents picking up the project with no prior memory**. Foll
 
 ### Phase 3 – Index & Coordination
 
-6. **Define IndexStore interface** (in `internal/index`)
+6. **Define IndexStore interface** (in `internal/index`) ✅
 
    * Methods to upsert `ParsedNote`, remove notes, and run basic queries:
 
@@ -169,7 +186,7 @@ This section is for **agents picking up the project with no prior memory**. Foll
      * List notes by date.
      * List tags and items for a tag.
 
-7. **Implement InMemoryIndexStore**
+7. **Implement InMemoryIndexStore** ✅
 
    * Use Go maps to store:
 
@@ -180,7 +197,7 @@ This section is for **agents picking up the project with no prior memory**. Foll
      * Tag → tasks/log entries.
    * Implement `UpsertParsedNote` to replace previous data for a note.
 
-8. **Implement VaultIndexManager**
+8. **Implement VaultIndexManager** ✅
 
    * Coordinates Vault + NoteParser + IndexStore.
    * Functions:

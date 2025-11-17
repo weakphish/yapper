@@ -1,16 +1,31 @@
-# Note System Core
+# Yapper
+## Yet Another Powerful Productivty Engine, Redux
+Core of a note-taking/task management system that I wish existed already.
 
-This repository hosts the backend for a Markdown-oriented task and note system.
-The requirements and phase-by-phase roadmap live in `AGENTS.md`. Agents should
-consult that document for the most current plan before making changes.
+## Key Features
+
+- Core service that parses & indexes Markdown notes
+    - Pluggable parsing and indexing layers allow for modularity
+- Exposed indexed vault over JSON-RPC
+    - Allows for N-many front-ends to exist, starting with a Neovim plugin
+
+## Current Progress
+
+Phase 1 (scaffolding) and the foundational pieces of Phases 2–3 are complete:
+
+- Filesystem vault layer with helpers to list/load Markdown notes.
+- Core parser contracts (`NoteParser`, `ParsedNote`) for pluggable strategies.
+- In-memory index implementation plus a `VaultIndexManager` that coordinates the vault, parser, and index.
+
+The next major milestone is implementing the regex-based parser and wiring the domain/query layer on top of the index manager.
 
 ## Project Layout
 
-- `cmd/note-daemon/` – entrypoint for the JSON-RPC daemon (placeholder for now).
+- `cmd/note-daemon/` – entrypoint for the JSON-RPC daemon.
 - `internal/model/` – data models for notes, tasks, log entries, and mentions.
-- `internal/vault/` – filesystem access layer (to be implemented in Phase 2).
+- `internal/vault/` – filesystem access layer.
 - `internal/parser/` – pluggable Markdown parsing strategies.
-- `internal/index/` – in-memory/persistent indexing layer.
+- `internal/index/` – index interfaces, in-memory store, and vault/index coordination.
 - `internal/domain/` – domain/query logic.
 - `internal/rpc/` – JSON-RPC wiring.
 
@@ -26,13 +41,7 @@ go build ./cmd/note-daemon
 
 # or run it directly
 go run ./cmd/note-daemon
+
+# run tests (currently exercises the index + manager layers)
+go test ./...
 ```
-
-## Development Process
-
-1. Review `AGENTS.md` to determine the next unfinished roadmap item.
-2. Implement the described functionality, keeping Markdown files as the source
-   of truth.
-3. Prefer small, well-tested packages inside `internal/` to keep the public API
-   limited to the daemon binary.
-4. Update documentation and tests as you progress through the phases.
